@@ -135,7 +135,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{615}
+% \CheckSum{648}
 % \GetFileId{wrapstuff.sty}
 %
 % \changes{v0}{2022/07/05}{初始版本。}
@@ -210,14 +210,15 @@ Copyright and Licence
 % \begin{macro}{wrapstuff}
 % 主要功能环境接口。
 %    \begin{macrocode}
-\NewDocumentEnvironment { wrapstuff } { o }
+\NewDocumentEnvironment { wrapstuff } { O { } }
   {
     \para_end:
     \legacy_if:nT { @nobreak }
       { \legacy_if_gset_false:n { @nobreak } }
     \dim_gset_eq:NN \g_@@_prevdepth_dim \tex_prevdepth:D
-    \tl_if_novalue:nF {#1}
-      { \keys_set_groups:nnn { wrapstuff } { stuff } {#1} }
+    \tl_if_blank:nTF {#1}
+      { \tl_clear:N \l_@@_main_kv_tl }
+      { \keys_set_filter:nnnN { wrapstuff } { main } {#1} \l_@@_main_kv_tl }
     \hbox_gset:Nw \g_@@_stuff_box
       \dim_set:Nn \l_@@_width_dim { \l_@@_width_tl }
       \dim_compare:nNnTF \l_@@_width_dim > \c_zero_dim
@@ -233,21 +234,33 @@ Copyright and Licence
         { \end { minipage } }
         { \tex_unskip:D }
     \hbox_gset_end:
-    \@@_next_par:n {#1}
+    \tl_if_empty:NTF \l_@@_main_kv_tl
+      { \tl_gclear:N \g_@@_main_setting_tl }
+      {
+        \exp_args:Nno
+        \keys_precompile:nnN
+          { wrapstuff }
+          { \l_@@_main_kv_tl } \l_@@_tmp_tl
+        \tl_gset_eq:NN \g_@@_main_setting_tl \l_@@_tmp_tl
+      }
+    \@@_next_par:
   }
+\tl_new:N \l_@@_tmp_tl
+\tl_new:N \l_@@_main_kv_tl
+\tl_new:N \g_@@_main_setting_tl
 \box_new:N \g_@@_stuff_box
 \dim_new:N \l_@@_width_dim
 \dim_new:N \g_@@_prevdepth_dim
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}[int]{\@@_next_par:n}
+% \begin{macro}[int]{\@@_next_par:}
 % 将 \env{wrapstuff} 环境之后的段落放入内部环境 \env{wrapstuff@par} 中。
 %    \begin{macrocode}
-\cs_new_protected:Npn \@@_next_par:n #1
+\cs_new_protected:Npn \@@_next_par:
   {
     \hook_gput_next_code:nn { para/begin }
-      { \begin { wrapstuff@par } {#1} }
+      { \begin { wrapstuff@par } }
     \hook_gput_next_code:nn { para/end }
       { \end { wrapstuff@par } }
   }
@@ -257,12 +270,13 @@ Copyright and Licence
 % \begin{macro}[int]{wrapstuff@par}
 % 内部环境，实现主要功能。
 %    \begin{macrocode}
-\NewDocumentEnvironment { wrapstuff@par } { m }
+\NewDocumentEnvironment { wrapstuff@par } { }
   {
-    \tl_if_novalue:nF {#1}
-      { \keys_set_filter:nnn { wrapstuff } { stuff } {#1} }
+    \tl_use:N \g_@@_main_setting_tl
     \dim_set:Nn \l_@@_sep_dim { \l_@@_sep_tl }
     \dim_set:Nn \l_@@_line_dim { \l_@@_linewidth_tl }
+    \dim_sub:Nn \l_@@_line_dim
+      { \tex_leftskip:D + \tex_rightskip:D }
     \dim_set:Nn \l_@@_window_dim
       {
           \l_@@_line_dim
@@ -299,6 +313,7 @@ Copyright and Licence
       {
         \int_set_eq:NN \l_@@_window_int \g_@@_window_int
         \int_gzero:N \g_@@_window_int
+        \int_zero:N \l_@@_top_int
       }
       {
         \int_set:Nn \l_@@_window_int
@@ -309,22 +324,23 @@ Copyright and Licence
                 \box_dp:N \strutbox
               }
           }
+        \int_compare:nNnT \l_@@_top_int < \c_zero_int
+          { \int_zero:N \l_@@_top_int }
       }
     \bool_if:NF \l_@@_hang_bool
       {
         \int_set:Nn \l_@@_window_int
           { \l_@@_window_int * 2 }
       }
-    \int_compare:nNnT \l_@@_top_int < \c_zero_int
-      { \int_zero:N \l_@@_top_int }
     \vbox_set:Nw \l_@@_body_box
       \dim_set_eq:NN \tex_prevdepth:D \g_@@_prevdepth_dim
       \tex_parshape:D
         \int_eval:n { \l_@@_top_int + 1 } ~
         \prg_replicate:nn
           { \l_@@_top_int }
-          { \c_zero_dim \l_@@_line_dim }
+          { \tex_leftskip:D \l_@@_line_dim }
         \c_zero_dim \c_max_dim
+      \@@_tex_parameter:
       \mode_leave_vertical:
   }
   {
@@ -346,7 +362,7 @@ Copyright and Licence
       { \box_clear:N \l_@@_part_box }
     \box_clear:N \l_@@_window_box
     \@@_build_box:
-    \@@_put_box:n {#1}
+    \@@_put_box:
   }
 \box_new:N \l_@@_part_box
 \box_new:N \l_@@_body_box
@@ -381,6 +397,20 @@ Copyright and Licence
 %    \end{macrocode}
 % \end{macro}
 %
+% \begin{macro}{\@@_tex_parameter:}
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_tex_parameter:
+  {
+    \int_zero:N \tex_clubpenalty:D
+    \int_zero:N \tex_widowpenalty:D
+    \int_zero:N \tex_interlinepenalty:D
+    \skip_zero:N \tex_leftskip:D
+    \skip_zero:N \tex_rightskip:D
+    \skip_set_eq:NN \tex_parfillskip:D \@flushglue
+  }
+%    \end{macrocode}
+% \end{macro}
+%
 % \begin{macro}{top}
 %    \begin{macrocode}
 \keys_define:nn { wrapstuff }
@@ -392,6 +422,13 @@ Copyright and Licence
     ratio      .fp_set:N = \l_@@_ratio_fp ,
     top       .int_set:N = \l_@@_top_int ,
     column   .bool_set:N = \l_@@_column_bool ,
+    sep        .groups:n = main ,
+    linewidth  .groups:n = main ,
+    width      .groups:n = main ,
+    float      .groups:n = main ,
+    ratio      .groups:n = main ,
+    top        .groups:n = main ,
+    column     .groups:n = main ,
     width      .groups:n = stuff ,
     float      .groups:n = stuff ,
     top       .initial:n = 1 ,
@@ -414,9 +451,8 @@ Copyright and Licence
   {
     \vbox_set:Nn \l_@@_body_box
       {
+        \@@_tex_parameter:
         \@@_make_parshape:
-        \skip_zero:N \tex_leftskip:D
-        \skip_zero:N \tex_rightskip:D
         \dim_zero:N \tex_emergencystretch:D
         \dim_set_eq:NN \tex_hfuzz:D \c_max_dim
         \dim_set_eq:NN \tex_vfuzz:D \c_max_dim
@@ -484,9 +520,7 @@ Copyright and Licence
       { \@@_build_block_aux: }
     \vbox_set:Nn \l_@@_window_box
       {
-        \skip_zero:N \tex_leftskip:D
-        \skip_zero:N \tex_rightskip:D
-        \skip_zero:N \tex_parfillskip:D
+        \@@_tex_parameter:
         \dim_set_eq:NN \tex_hsize:D \l_@@_line_dim
         \para_raw_noindent:
           \hbox_unpack:N \l_@@_window_box
@@ -512,26 +546,28 @@ Copyright and Licence
         \box_gset_to_last:N \g_@@_l_box
         \tex_unskip:D
         \int_compare:nNnF \tex_lastnodetype:D > \c_zero_int
-          {
-            \bool_gset_true:N \g_@@_empty_bool
-            \dim_gset:Nn \g_@@_ht_dim
-              {
-                \dim_max:nn
-                  { \box_ht:N \g_@@_l_box }
-                  { \box_ht:N \g_@@_r_box }
-              }
-          }
+          { \@@_build_block_finalise: }
       }
     \hbox_set:Nn \l_@@_window_box
       {
         \box_use_drop:N \g_@@_l_box
-        \tex_hfil:D
+        \tex_hfill:D
         \box_use_drop:N \g_@@_r_box
         \box_if_empty:NF \l_@@_window_box
           {
             \tex_penalty:D \c_@@_break_int
             \hbox_unpack:N \l_@@_window_box
           }
+      }
+  }
+\cs_new_protected_nopar:Npn \@@_build_block_finalise:
+  {
+    \bool_gset_true:N \g_@@_empty_bool
+    \dim_gset:Nn \g_@@_ht_dim
+      {
+        \dim_max:nn
+          { \box_ht:N \g_@@_l_box }
+          { \box_ht:N \g_@@_r_box }
       }
   }
 \dim_new:N \g_@@_ht_dim
@@ -589,9 +625,9 @@ Copyright and Licence
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\@@_put_box:n}
+% \begin{macro}{\@@_put_box:}
 %    \begin{macrocode}
-\cs_new_protected:Npn \@@_put_box:n #1
+\cs_new_protected:Npn \@@_put_box:
   {
     \dim_compare:nNnT \g_@@_prevdepth_dim > \c_@@_ignore_depth_dim
       { \@@_add_vskip: }
@@ -605,7 +641,7 @@ Copyright and Licence
     \box_if_empty:NTF \l_@@_part_box
       {
         \dim_compare:nNnTF \l_@@_shift_dim < \c_zero_dim
-          { \@@_put_box_auxii:n {#1} }
+          { \@@_put_box_auxii: }
           { \@@_put_box_auxi: }
       }
       { \@@_put_box_auxi: }
@@ -636,9 +672,9 @@ Copyright and Licence
         \hbox_unpack_drop:N \l_@@_part_box
       }
   }
-\cs_new_protected_nopar:Npn \@@_put_box_auxii:n
+\cs_new_protected_nopar:Npn \@@_put_box_auxii:
   {
-    \exp_args:Ne \@@_set_next:nn
+    \exp_args:Ne \@@_set_next:n
       { \dim_eval:n { \box_wd:N \g_@@_stuff_box } }
   }
 \cs_new_protected_nopar:Npn \@@_put_box_auxiii:
@@ -663,14 +699,7 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_add_vskip:
   {
-    \int_compare:nNnTF \tex_lastnodetype:D < \c_zero_int
-      {
-        \dim_compare:nNnT \tex_topskip:D > \g_@@_ht_dim
-          {
-            \tex_hrule:D height \c_zero_dim \scan_stop:
-            \skip_vertical:n { -\g_@@_ht_dim }
-          }
-      }
+    \dim_compare:nNnTF \tex_pagegoal:D < \c_max_dim
       {
         \skip_vertical:n
           {
@@ -680,21 +709,28 @@ Copyright and Licence
           }
         \dim_set_eq:NN \tex_prevdepth:D \c_@@_ignore_depth_dim
       }
+      {
+        \dim_compare:nNnT \tex_topskip:D > \g_@@_ht_dim
+          {
+            \tex_hrule:D height \c_zero_dim \scan_stop:
+            \skip_vertical:n { -\g_@@_ht_dim }
+          }
+      }
   }
 %    \end{macrocode}
 % \end{macro}
 %
 % \begin{macro}{\@@_set_next:nn}
 %    \begin{macrocode}
-\cs_new_protected_nopar:Npn \@@_set_next:nn
+\cs_new_protected_nopar:Npn \@@_set_next:n
   {
     \dim_set:Nn \l_@@_shift_dim
       { - \l_@@_shift_dim - \l_@@_par_skip }
     \dim_compare:nNnTF \l_@@_shift_dim > \c_zero_dim
-      { \@@_set_next_auxi:nn }
-      { \@@_set_next_auxii:nn }
+      { \@@_set_next_auxi:n }
+      { \@@_set_next_auxii:n }
   }
-\cs_new_protected:Npn \@@_set_next_auxi:nn #1#2
+\cs_new_protected:Npn \@@_set_next_auxi:n #1
   {
     \int_gset:Nn \g_@@_window_int
       { \@@_unit:n { \l_@@_shift_dim } }
@@ -718,11 +754,9 @@ Copyright and Licence
     \dim_gset:Nn \g_@@_prevdepth_dim
       { \box_dp:N \l_@@_window_box }
     \tex_vadjust:D { \tex_penalty:D \c_@@_nobreak_int }
-    \tl_if_novalue:nTF {#2}
-      { \@@_next_par:n { top = \c_zero_int } }
-      { \@@_next_par:n { #2 , top = \c_zero_int } }
+    \@@_next_par:
   }
-\cs_new_protected:Npn \@@_set_next_auxii:nn #1#2
+\cs_new_protected:Npn \@@_set_next_auxii:n #1
   {
     \hbox_gset:Nn \g_@@_stuff_box
       {
