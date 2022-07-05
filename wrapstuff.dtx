@@ -1,0 +1,780 @@
+% \iffalse meta-comment
+% !TeX program  = XeLaTeX
+% !TeX encoding = UTF-8
+%<*internal>
+\iffalse
+%</internal>
+%<*readme>
+wrapstuff
+=========
+
+The `wrapstuff` package provides another implementation of text wrapping.
+
+Basic Usage
+-----------
+
+Contributing
+------------
+
+[Issues](https://github.com/qinglee/wrapstuff/issues) and
+[pull requests](https://github.com/qinglee/wrapstuff/pulls)
+are always welcome.
+
+Copyright and Licence
+---------------------
+
+    Copyright (C) 2022 by Qing Lee <sobenlee@gmail.com>
+    -----------------------------------------------------------------
+
+    This work may be distributed and/or modified under the
+    conditions of the LaTeX Project Public License, either
+    version 1.3c of this license or (at your option) any later
+    version. This version of this license is in
+       http://www.latex-project.org/lppl/lppl-1-3c.txt
+    and the latest version of this license is in
+       http://www.latex-project.org/lppl.txt
+    and version 1.3 or later is part of all distributions of
+    LaTeX version 2005/12/01 or later.
+
+    This work has the LPPL maintenance status "maintained".
+
+    The Current Maintainer of this work is Qing Lee.
+
+    This package consists of the file  wrapstuff.dtx,
+                 and the derived files wrapstuff.pdf,
+                                       wrapstuff.sty,
+                                       wrapstuff.ins and
+                                       README.md (this file).
+%</readme>
+%<*internal>
+\fi
+\begingroup
+  \def\temp{LaTeX2e}
+\expandafter\endgroup\ifx\temp\fmtname\else
+\csname fi\endcsname
+%</internal>
+%<*install>
+
+\input ctxdocstrip %
+
+\preamble
+
+    Copyright (C) 2022 by Qing Lee <sobenlee@gmail.com>
+-----------------------------------------------------------------
+
+    This work may be distributed and/or modified under the
+    conditions of the LaTeX Project Public License, either
+    version 1.3c of this license or (at your option) any later
+    version. This version of this license is in
+       http://www.latex-project.org/lppl/lppl-1-3c.txt
+    and the latest version of this license is in
+       http://www.latex-project.org/lppl.txt
+    and version 1.3 or later is part of all distributions of
+    LaTeX version 2005/12/01 or later.
+
+    This work has the LPPL maintenance status "maintained".
+
+    The Current Maintainer of this work is Qing Lee.
+
+-----------------------------------------------------------------
+
+\endpreamble
+
+\postamble
+
+    This work consists of the file  wrapstuff.dtx,
+              and the derived files wrapstuff.pdf,
+                                    wrapstuff.sty,
+                                    wrapstuff.ins and
+                                    README.md.
+\endpostamble
+
+\generate
+  {
+%</install>
+%<*internal>
+    \usedir{source/latex/wrapstuff}
+    \file{wrapstuff.ins} {\from{\jobname.dtx}{install}}
+%</internal>
+%<*install>
+    \usedir{tex/latex/wrapstuff}
+    \file{wrapstuff.sty} {\from{\jobname.dtx}{package}}
+    \nopreamble\nopostamble
+    \usedir{doc/latex/wrapstuff}
+    \file{README.md}    {\from{\jobname.dtx}{readme}}
+  }
+
+\endbatchfile
+%</install>
+%<*internal>
+\fi
+%</internal>
+%<package>\NeedsTeXFormat{LaTeX2e}
+%<package>\RequirePackage{expl3}
+%<+package>\GetIdInfo$Id$
+%<package>  {Wrapping text around stuff}
+%<package>\ProvidesExplPackage{\ExplFileName}
+%<package>  {\ExplFileDate}{0}{\ExplFileDescription}
+%<*driver>
+\documentclass{ctxdoc}
+\ExplSyntaxOn
+\makeatletter
+\DeclareDocumentCommand \gitsha { m }
+  {
+    \href { https \c_colon_str //github.com/qinglee/wrapstuff/commit/#1 }
+          { rev. ~ \texttt{#1} }
+  }
+\makeatother
+\ExplSyntaxOff
+\begin{document}
+  \DocInput{\jobname.dtx}
+  \IndexLayout
+  \PrintChanges
+  \PrintIndex
+\end{document}
+%</driver>
+% \fi
+%
+% \CheckSum{615}
+% \GetFileId{wrapstuff.sty}
+%
+% \changes{v0}{2022/07/05}{初始版本。}
+%
+% \title{\bfseries\pkg{wrapstuff} 宏包}
+% \author{李清}
+% \date{\ExplFileDate\thanks{\gitsha{\ExplFileVersion}.}}
+% \maketitle
+%
+% \begin{abstract}
+%
+% \pkg{wrapstuff} 宏包提供了图文绕排的另一种实现。
+%
+% \end{abstract}
+%
+% \begin{documentation}
+%
+% \section{基本用法}
+%
+% \begin{function}{wrapstuff}
+%   \begin{syntax}
+%     \tn{begin} \Arg{wrapstuff} \oarg{...}
+%       ...
+%     \tn{end} \Arg{wrapstuff}
+%     ...
+%   \end{syntax}
+% \end{function}
+%
+% \begin{function}{top}
+% \end{function}
+%
+% \begin{function}{sep}
+% \end{function}
+%
+% \begin{function}{column}
+% \end{function}
+%
+% \begin{function}{ratio}
+% \end{function}
+%
+% \begin{function}{linewidth}
+% \end{function}
+%
+% \begin{function}{width}
+% \end{function}
+%
+% \begin{function}{float}
+% \end{function}
+%
+% \end{documentation}
+%
+%
+% \StopEventually{}
+%
+%
+%\begin{implementation}
+%
+% \section{代码实现}
+%
+%    \begin{macrocode}
+%<*package>
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+%<@@=wstf>
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+\prop_gput:Nnn \g_msg_module_name_prop { wstf } { wrapstuff }
+%    \end{macrocode}
+%
+% \begin{macro}{wrapstuff}
+% 主要功能环境接口。
+%    \begin{macrocode}
+\NewDocumentEnvironment { wrapstuff } { o }
+  {
+    \para_end:
+    \legacy_if:nT { @nobreak }
+      { \legacy_if_gset_false:n { @nobreak } }
+    \dim_gset_eq:NN \g_@@_prevdepth_dim \tex_prevdepth:D
+    \tl_if_novalue:nF {#1}
+      { \keys_set_groups:nnn { wrapstuff } { stuff } {#1} }
+    \hbox_gset:Nw \g_@@_stuff_box
+      \dim_set:Nn \l_@@_width_dim { \l_@@_width_tl }
+      \dim_compare:nNnTF \l_@@_width_dim > \c_zero_dim
+        {
+          \tl_if_empty:NF \l_@@_float_tl
+            { \cs_set_eq:NN \@captype \l_@@_float_tl }
+          \begin { minipage } { \l_@@_width_dim }
+        }
+        { \tex_ignorespaces:D }
+  }
+  {
+      \dim_compare:nNnTF \l_@@_width_dim > \c_zero_dim
+        { \end { minipage } }
+        { \tex_unskip:D }
+    \hbox_gset_end:
+    \@@_next_par:n {#1}
+  }
+\box_new:N \g_@@_stuff_box
+\dim_new:N \l_@@_width_dim
+\dim_new:N \g_@@_prevdepth_dim
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}[int]{\@@_next_par:n}
+% 将 \env{wrapstuff} 环境之后的段落放入内部环境 \env{wrapstuff@par} 中。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_next_par:n #1
+  {
+    \hook_gput_next_code:nn { para/begin }
+      { \begin { wrapstuff@par } {#1} }
+    \hook_gput_next_code:nn { para/end }
+      { \end { wrapstuff@par } }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}[int]{wrapstuff@par}
+% 内部环境，实现主要功能。
+%    \begin{macrocode}
+\NewDocumentEnvironment { wrapstuff@par } { m }
+  {
+    \tl_if_novalue:nF {#1}
+      { \keys_set_filter:nnn { wrapstuff } { stuff } {#1} }
+    \dim_set:Nn \l_@@_sep_dim { \l_@@_sep_tl }
+    \dim_set:Nn \l_@@_line_dim { \l_@@_linewidth_tl }
+    \dim_set:Nn \l_@@_window_dim
+      {
+          \l_@@_line_dim
+        - \l_@@_sep_dim
+        - \box_wd:N \g_@@_stuff_box
+      }
+    \fp_compare:nNnTF \l_@@_ratio_fp > \c_zero_fp
+      {
+        \fp_compare:nNnTF \l_@@_ratio_fp < \c_one_fp
+          {
+            \bool_set_false:N \l_@@_hang_bool
+            \dim_sub:Nn \l_@@_window_dim { \l_@@_sep_dim }
+            \dim_set:Nn \l_@@_l_dim
+              { \@@_ratio:Nn \l_@@_ratio_fp { \l_@@_window_dim } }
+            \dim_set:Nn \l_@@_r_dim { \l_@@_window_dim - \l_@@_l_dim }
+            \bool_if:NTF \l_@@_column_bool
+              { \cs_set_eq:NN \@@_build_box: \@@_build_column: }
+              { \cs_set_eq:NN \@@_build_box: \@@_build_block: }
+          }
+          {
+            \bool_set_true:N \l_@@_hang_bool
+            \dim_zero:N \l_@@_r_dim
+            \dim_set_eq:NN \l_@@_l_dim \l_@@_window_dim
+            \cs_set_eq:NN \@@_build_box: \@@_build_hang:
+          }
+      }
+      {
+        \bool_set_true:N \l_@@_hang_bool
+        \dim_zero:N \l_@@_l_dim
+        \dim_set_eq:NN \l_@@_r_dim \l_@@_window_dim
+        \cs_set_eq:NN \@@_build_box: \@@_build_hang:
+      }
+    \int_compare:nNnTF \g_@@_window_int > \c_zero_int
+      {
+        \int_set_eq:NN \l_@@_window_int \g_@@_window_int
+        \int_gzero:N \g_@@_window_int
+      }
+      {
+        \int_set:Nn \l_@@_window_int
+          {
+            \@@_unit:n
+              {
+                \box_ht_plus_dp:N \g_@@_stuff_box +
+                \box_dp:N \strutbox
+              }
+          }
+      }
+    \bool_if:NF \l_@@_hang_bool
+      {
+        \int_set:Nn \l_@@_window_int
+          { \l_@@_window_int * 2 }
+      }
+    \int_compare:nNnT \l_@@_top_int < \c_zero_int
+      { \int_zero:N \l_@@_top_int }
+    \vbox_set:Nw \l_@@_body_box
+      \dim_set_eq:NN \tex_prevdepth:D \g_@@_prevdepth_dim
+      \tex_parshape:D
+        \int_eval:n { \l_@@_top_int + 1 } ~
+        \prg_replicate:nn
+          { \l_@@_top_int }
+          { \c_zero_dim \l_@@_line_dim }
+        \c_zero_dim \c_max_dim
+      \mode_leave_vertical:
+  }
+  {
+    \vbox_set_end:
+    \@@_extract_hbox:NN \l_@@_body_box \l_@@_part_box
+    \int_compare:nNnT \l_@@_top_int > \c_zero_int
+      {
+        \vbox_unpack:N \l_@@_body_box
+        \dim_gset:Nn \g_@@_prevdepth_dim
+          {
+            \dim_max:nn
+              { \tex_prevdepth:D }
+              { \box_dp:N \l_@@_body_box }
+          }
+      }
+    \@@_build_body_box:
+    \int_compare:nNnTF \g_@@_line_int > \l_@@_window_int
+      { \@@_extract_hbox:NN \l_@@_body_box \l_@@_part_box }
+      { \box_clear:N \l_@@_part_box }
+    \box_clear:N \l_@@_window_box
+    \@@_build_box:
+    \@@_put_box:n {#1}
+  }
+\box_new:N \l_@@_part_box
+\box_new:N \l_@@_body_box
+\box_new:N \l_@@_window_box
+\int_new:N \l_@@_window_int
+\int_new:N \g_@@_line_int
+\dim_new:N \l_@@_l_dim
+\dim_new:N \l_@@_r_dim
+\dim_new:N \l_@@_sep_dim
+\dim_new:N \l_@@_window_dim
+\dim_new:N \l_@@_line_dim
+\bool_new:N \l_@@_hang_bool
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_ratio:Nn, \@@_unit:n}
+%    \begin{macrocode}
+\cs_new:Npn \@@_ratio:Nn #1#2
+  { \fp_to_dim:n { #1 \dim_to_fp:n {#2} } }
+\cs_new:Npn \@@_unit:n #1
+  {
+    \fp_eval:n
+      {
+        ceil
+          (
+            \dim_to_decimal_in_unit:nn
+              {#1}
+              { \tex_baselineskip:D }
+          )
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{top}
+%    \begin{macrocode}
+\keys_define:nn { wrapstuff }
+  {
+    sep        .tl_set:N = \l_@@_sep_tl ,
+    linewidth  .tl_set:N = \l_@@_linewidth_tl ,
+    width      .tl_set:N = \l_@@_width_tl ,
+    float      .tl_set:N = \l_@@_float_tl ,
+    ratio      .fp_set:N = \l_@@_ratio_fp ,
+    top       .int_set:N = \l_@@_top_int ,
+    column   .bool_set:N = \l_@@_column_bool ,
+    width      .groups:n = stuff ,
+    float      .groups:n = stuff ,
+    top       .initial:n = 1 ,
+    sep       .initial:n = 1em ,
+    ratio     .initial:n = 0.5 ,
+    column    .initial:n = true ,
+    linewidth .initial:n = \linewidth ,
+    width     .initial:n = 0pt ,
+    float     .initial:n = figure ,
+    sep       .value_required:n = true ,
+    linewidth .value_required:n = true ,
+    width     .value_required:n = true
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_build_body_box:}
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_build_body_box:
+  {
+    \vbox_set:Nn \l_@@_body_box
+      {
+        \@@_make_parshape:
+        \skip_zero:N \tex_leftskip:D
+        \skip_zero:N \tex_rightskip:D
+        \dim_zero:N \tex_emergencystretch:D
+        \dim_set_eq:NN \tex_hfuzz:D \c_max_dim
+        \dim_set_eq:NN \tex_vfuzz:D \c_max_dim
+        \int_set_eq:NN \tex_hbadness:D \c_max_int
+        \int_set_eq:NN \tex_vbadness:D \c_max_int
+        \int_set:Nn \tex_tolerance:D { 1000 }
+        \para_raw_noindent:
+          \hbox_unpack_drop:N \l_@@_part_box
+        \para_raw_end:
+        \int_gset_eq:NN \g_@@_line_int \tex_prevgraf:D
+      }
+  }
+\int_new:N \g_@@_window_int
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_make_parshape:}
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_make_parshape:
+  {
+    \tex_parshape:D
+      \int_eval:n { \l_@@_window_int + 1 } ~
+      \bool_if:NTF \l_@@_hang_bool
+        {
+          \prg_replicate:nn
+            { \l_@@_window_int }
+            { \c_zero_dim \l_@@_window_dim }
+        }
+        {
+          \bool_if:NTF \l_@@_column_bool
+            {
+              \prg_replicate:nn
+                { \l_@@_window_int / 2 }
+                { \c_zero_dim \l_@@_l_dim }
+              \prg_replicate:nn
+                { \l_@@_window_int / 2 }
+                { \c_zero_dim \l_@@_r_dim }
+            }
+            {
+              \prg_replicate:nn
+                { \l_@@_window_int / 2 }
+                {
+                  \c_zero_dim \l_@@_l_dim
+                  \c_zero_dim \l_@@_r_dim
+                }
+            }
+        }
+      \c_zero_dim \c_max_dim
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_build_box:, \@@_build_block:}
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_build_block:
+  {
+    \bool_gset:Nn \g_@@_odd_bool
+      {
+        \bool_lazy_and_p:nn
+          { \box_if_empty_p:N \l_@@_part_box }
+          { \int_if_odd_p:n { \g_@@_line_int } }
+      }
+    \bool_gset_false:N \g_@@_empty_bool
+    \bool_do_until:Nn \g_@@_empty_bool
+      { \@@_build_block_aux: }
+    \vbox_set:Nn \l_@@_window_box
+      {
+        \skip_zero:N \tex_leftskip:D
+        \skip_zero:N \tex_rightskip:D
+        \skip_zero:N \tex_parfillskip:D
+        \dim_set_eq:NN \tex_hsize:D \l_@@_line_dim
+        \para_raw_noindent:
+          \hbox_unpack:N \l_@@_window_box
+        \para_raw_end:
+      }
+  }
+\bool_new:N \g_@@_odd_bool
+\bool_new:N \g_@@_empty_bool
+\cs_new_protected_nopar:Npn \@@_build_block_aux:
+  {
+    \vbox_set:Nn \l_@@_body_box
+      {
+        \vbox_unpack:N \l_@@_body_box
+        \bool_if:NTF \g_@@_odd_bool
+          {
+            \bool_gset_false:N \g_@@_odd_bool
+            \box_gset_eq:NN \g_@@_r_box \l_@@_empty_box
+          }
+          {
+            \box_gset_to_last:N \g_@@_r_box
+            \tex_unskip:D
+          }
+        \box_gset_to_last:N \g_@@_l_box
+        \tex_unskip:D
+        \int_compare:nNnF \tex_lastnodetype:D > \c_zero_int
+          {
+            \bool_gset_true:N \g_@@_empty_bool
+            \dim_gset:Nn \g_@@_ht_dim
+              {
+                \dim_max:nn
+                  { \box_ht:N \g_@@_l_box }
+                  { \box_ht:N \g_@@_r_box }
+              }
+          }
+      }
+    \hbox_set:Nn \l_@@_window_box
+      {
+        \box_use_drop:N \g_@@_l_box
+        \tex_hfil:D
+        \box_use_drop:N \g_@@_r_box
+        \box_if_empty:NF \l_@@_window_box
+          {
+            \tex_penalty:D \c_@@_break_int
+            \hbox_unpack:N \l_@@_window_box
+          }
+      }
+  }
+\dim_new:N \g_@@_ht_dim
+\box_new:N \g_@@_l_box
+\box_new:N \g_@@_r_box
+\box_new:N \l_@@_empty_box
+\hbox_set:Nn \l_@@_empty_box { }
+\int_const:Nn \c_@@_break_int { -10000 }
+\int_const:Nn \c_@@_nobreak_int { 10000 }
+\cs_new_eq:NN \@@_build_box: \@@_build_block:
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_build_column:}
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_build_column:
+  {
+    \hbox_set_to_wd:Nnn \l_@@_window_box { \l_@@_line_dim }
+      {
+        \skip_zero:N \tex_splittopskip:D
+        \int_set_eq:NN \tex_vbadness:D \c_max_int
+        \vbox_set_split_to_ht:NNn \l_@@_window_box \l_@@_body_box
+          {
+            \dim_max:nn
+              { \box_ht:N \l_@@_body_box / 2 }
+              {
+                \@@_unit:n { \box_ht:N \l_@@_body_box / 2 }
+                \tex_baselineskip:D
+              }
+          }
+        \vbox_set_top:Nn \l_@@_window_box
+          { \vbox_unpack:N \l_@@_window_box }
+        \dim_gset:Nn \g_@@_ht_dim { \box_ht:N \l_@@_window_box }
+        \vbox_set:Nn \l_@@_window_box
+          { \vbox_unpack:N \l_@@_window_box }
+        \box_use:N \l_@@_window_box
+        \tex_hfil:D
+        \box_move_up:nn
+          { \box_ht:N \l_@@_window_box - \box_ht:N \l_@@_body_box }
+          { \box_use_drop:N \l_@@_body_box }
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_build_hang:}
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_build_hang:
+  {
+    \vbox_set_top:Nn \l_@@_window_box
+      { \vbox_unpack:N \l_@@_body_box }
+    \dim_gset:Nn \g_@@_ht_dim { \box_ht:N \l_@@_window_box }
+    \box_set_eq_drop:NN \l_@@_window_box \l_@@_body_box
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_put_box:n}
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_put_box:n #1
+  {
+    \dim_compare:nNnT \g_@@_prevdepth_dim > \c_@@_ignore_depth_dim
+      { \@@_add_vskip: }
+    \skip_set_eq:NN \l_@@_par_skip \tex_parskip:D
+    \skip_zero:N \tex_parskip:D
+    \dim_set:Nn \l_@@_shift_dim
+      {
+        \box_ht_plus_dp:N \l_@@_window_box -
+        \box_ht_plus_dp:N \g_@@_stuff_box
+      }
+    \box_if_empty:NTF \l_@@_part_box
+      {
+        \dim_compare:nNnTF \l_@@_shift_dim < \c_zero_dim
+          { \@@_put_box_auxii:n {#1} }
+          { \@@_put_box_auxi: }
+      }
+      { \@@_put_box_auxi: }
+  }
+\dim_const:Nn \c_@@_ignore_depth_dim { -1000pt }
+\dim_new:N \l_@@_shift_dim
+\skip_new:N \l_@@_par_skip
+\cs_new_protected_nopar:Npn \@@_put_box_auxi:
+  {
+    \tex_noindent:D \hbox:n
+      {
+        \@@_put_box_auxiii:
+        \box_move_up:nn
+          {
+            ( \box_dp:N \g_@@_stuff_box -
+              \box_dp:N \l_@@_window_box ) +
+            \l_@@_shift_dim / 2
+          }
+          {
+            \hbox_overlap_right:n
+              { \box_use:N \g_@@_stuff_box }
+          }
+      }
+    \box_if_empty:NF \l_@@_part_box
+      {
+        \para_end:
+        \tex_noindent:D
+        \hbox_unpack_drop:N \l_@@_part_box
+      }
+  }
+\cs_new_protected_nopar:Npn \@@_put_box_auxii:n
+  {
+    \exp_args:Ne \@@_set_next:nn
+      { \dim_eval:n { \box_wd:N \g_@@_stuff_box } }
+  }
+\cs_new_protected_nopar:Npn \@@_put_box_auxiii:
+  {
+    \dim_compare:nNnTF \l_@@_l_dim = \c_zero_dim
+      {
+        \hbox_overlap_right:n
+          {
+            \skip_horizontal:n { \l_@@_line_dim - \l_@@_r_dim }
+            \box_use:N \l_@@_window_box
+          }
+      }
+      {
+        \hbox_overlap_right:n { \box_use:N \l_@@_window_box }
+        \skip_horizontal:n { \l_@@_l_dim + \l_@@_sep_dim }
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_add_vskip:}
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_add_vskip:
+  {
+    \int_compare:nNnTF \tex_lastnodetype:D < \c_zero_int
+      {
+        \dim_compare:nNnT \tex_topskip:D > \g_@@_ht_dim
+          {
+            \tex_hrule:D height \c_zero_dim \scan_stop:
+            \skip_vertical:n { -\g_@@_ht_dim }
+          }
+      }
+      {
+        \skip_vertical:n
+          {
+              \tex_baselineskip:D
+            - \g_@@_prevdepth_dim
+            - \g_@@_ht_dim
+          }
+        \dim_set_eq:NN \tex_prevdepth:D \c_@@_ignore_depth_dim
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_set_next:nn}
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_set_next:nn
+  {
+    \dim_set:Nn \l_@@_shift_dim
+      { - \l_@@_shift_dim - \l_@@_par_skip }
+    \dim_compare:nNnTF \l_@@_shift_dim > \c_zero_dim
+      { \@@_set_next_auxi:nn }
+      { \@@_set_next_auxii:nn }
+  }
+\cs_new_protected:Npn \@@_set_next_auxi:nn #1#2
+  {
+    \int_gset:Nn \g_@@_window_int
+      { \@@_unit:n { \l_@@_shift_dim } }
+    \hbox_gset:Nn \g_@@_stuff_box
+      {
+        \box_move_down:nn
+          {
+            \box_ht:N \g_@@_stuff_box  -
+            \box_ht:N \l_@@_window_box +
+            (
+                \tex_baselineskip:D * \g_@@_window_int
+              - \l_@@_shift_dim
+            ) / 2
+          }
+          { \box_use:N \g_@@_stuff_box }
+      }
+    \@@_set_next_auxiii:
+    \box_gset_eq:NN \g_@@_stuff_box \l_@@_empty_box
+    \box_gset_wd:Nn \g_@@_stuff_box {#1}
+    \box_gset_ht:Nn \g_@@_stuff_box { \l_@@_shift_dim }
+    \dim_gset:Nn \g_@@_prevdepth_dim
+      { \box_dp:N \l_@@_window_box }
+    \tex_vadjust:D { \tex_penalty:D \c_@@_nobreak_int }
+    \tl_if_novalue:nTF {#2}
+      { \@@_next_par:n { top = \c_zero_int } }
+      { \@@_next_par:n { #2 , top = \c_zero_int } }
+  }
+\cs_new_protected:Npn \@@_set_next_auxii:nn #1#2
+  {
+    \hbox_gset:Nn \g_@@_stuff_box
+      {
+        \box_move_down:nn
+          {
+            \box_ht:N \g_@@_stuff_box -
+            \box_ht:N \l_@@_window_box
+          }
+          { \box_use:N \g_@@_stuff_box }
+      }
+    \@@_set_next_auxiii:
+  }
+\cs_new_protected:Npn \@@_set_next_auxiii:
+  {
+    \box_gset_ht:Nn \g_@@_stuff_box { \c_zero_dim }
+    \box_gset_dp:Nn \g_@@_stuff_box { \c_zero_dim }
+    \tex_noindent:D \hbox:n
+      {
+        \@@_put_box_auxiii:
+        \hbox_overlap_right:n
+          { \box_use:N \g_@@_stuff_box }
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_extract_hbox:NN}
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_extract_hbox:NN #1#2
+  {
+    \vbox_set:Nn #1
+      {
+        \vbox_unpack_drop:N #1
+        \box_gset_to_last:N \g_@@_last_box
+        \tex_unskip:D
+      }
+    \hbox_set:Nn #2
+      {
+        \hbox_unpack_drop:N \g_@@_last_box
+        \tex_unskip:D \tex_unskip:D \tex_unpenalty:D
+      }
+  }
+\box_new:N \g_@@_last_box
+%    \end{macrocode}
+% \end{macro}
+%
+%    \begin{macrocode}
+%</package>
+%    \end{macrocode}
+%
+% \end{implementation}
+%
+% \Finale
+%
+\endinput
