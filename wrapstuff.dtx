@@ -135,7 +135,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{1273}
+% \CheckSum{1339}
 % \GetFileId{wrapstuff.sty}
 %
 % \changes{v0}{2022/07/05}{初始版本。}
@@ -225,6 +225,7 @@ Copyright and Licence
 \NewDocumentEnvironment { wrapstuff } { O { } }
   {
     \para_end:
+    \@@_par_clear:
     \legacy_if:nT { @nobreak }
       { \legacy_if_gset_false:n { @nobreak } }
     \dim_gset_eq:NN \g_@@_prevdepth_dim \tex_prevdepth:D
@@ -270,14 +271,37 @@ Copyright and Licence
 %
 % \begin{macro}[int]{\@@_next_par:}
 % 将 \env{wrapstuff} 环境之后的段落放入内部环境 \env{wrapstuff@par} 中。
+% 为了控制钩子执行顺序，需要使用 |wrapstuff| 标签，
+% 而不用更为方便的 \cs{hook_gput_next_code:nn} 实现。
 %    \begin{macrocode}
+\hook_gput_code:nnn { para/begin } { wrapstuff }
+  { \@@_par_begin: }
+\hook_gput_code:nnn { para/end }   { wrapstuff }
+  { \@@_par_end: }
 \cs_new_protected:Npn \@@_next_par:
   {
-    \hook_gput_next_code:nn { para/begin }
-      { \begin { wrapstuff@par } }
-    \hook_gput_next_code:nn { para/end }
-      { \end { wrapstuff@par } }
+    \cs_gset_eq:NN \@@_par_begin: \@@_par_begin_init:
+    \cs_gset_eq:NN \@@_par_end:   \@@_par_end_init:
   }
+\cs_new_protected_nopar:Npn \@@_par_begin_init:
+  {
+    \cs_gset_eq:NN \@@_par_begin: \@@_empty:
+    \begin { wrapstuff@par }
+  }
+\cs_new_protected_nopar:Npn \@@_par_end_init:
+  {
+    \cs_gset_eq:NN \@@_par_end: \@@_empty:
+    \end { wrapstuff@par }
+  }
+\cs_new_protected_nopar:Npn \@@_par_clear:
+  {
+    \cs_gset_eq:NN \@@_par_begin: \@@_empty:
+    \cs_gset_eq:NN \@@_par_begin: \@@_empty:
+  }
+\cs_new_protected_nopar:Npn \@@_empty:
+  { }
+\cs_new_eq:NN \@@_par_begin: \@@_empty:
+\cs_new_eq:NN \@@_par_end:   \@@_empty:
 %    \end{macrocode}
 % \end{macro}
 %
@@ -363,7 +387,9 @@ Copyright and Licence
         \c_zero_dim \c_max_dim
       \@@_tex_parameter:
       \@@_display_parameter:
-      \para_raw_indent:
+      \box_if_empty:NTF \g_para_indent_box
+        { \para_raw_indent: }
+        { \para_raw_noindent: }
   }
   {
       \para_raw_end:
@@ -492,6 +518,7 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_put_body_box:
   {
+    \para_raw_end:
     \dim_compare:nNnTF { \box_wd:N \l_@@_body_box } < \c_max_dim
       {
         \vbox_unpack:N \l_@@_body_box
@@ -567,6 +594,11 @@ Copyright and Licence
         \int_gset_eq:NN \g_@@_pos_int \tex_lastpenalty:D
         \tex_unpenalty:D
         \box_gset_to_last:N \g_@@_equation_box
+        \skip_gset_eq:NN \g_@@_pre_skip \tex_lastskip:D
+        \tex_unskip:D
+        \skip_gadd:Nn \g_@@_pre_skip { \tex_lastskip:D }
+        \tex_unskip:D
+        \skip_vertical:N \g_@@_pre_skip
       }
     \box_if_empty:NTF \l_@@_body_box
       { \@@_build_display_auxi: }
@@ -989,12 +1021,15 @@ Copyright and Licence
   }
 \cs_new_protected_nopar:Npn \@@_rebuild_window:
   {
-    \int_sub:Nn \l_@@_window_int { 2 }
-    \box_set_eq_drop:NN \l_@@_last_l_box \l_@@_l_box
-    \box_set_eq_drop:NN \l_@@_last_r_box \l_@@_r_box
-    \box_set_eq:NN \l_@@_part_box \l_@@_save_body_box
-    \@@_build_window:
-    \@@_build_column_aux:
+    \int_compare:nNnT \l_@@_window_int > { 2 }
+      {
+        \int_sub:Nn \l_@@_window_int { 2 }
+        \box_set_eq_drop:NN \l_@@_last_l_box \l_@@_l_box
+        \box_set_eq_drop:NN \l_@@_last_r_box \l_@@_r_box
+        \box_set_eq:NN \l_@@_part_box \l_@@_save_body_box
+        \@@_build_window:
+        \@@_build_column_aux:
+      }
   }
 \box_new:N \l_@@_last_l_box
 \box_new:N \l_@@_last_r_box
@@ -1027,8 +1062,10 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_put_box:
   {
-    \dim_compare:nNnT \g_@@_prevdepth_dim > \c_@@_ignore_depth_dim
+    \para_raw_end:
+    \dim_compare:nNnTF \g_@@_prevdepth_dim > \c_@@_ignore_depth_dim
       { \@@_add_vskip: }
+      { \skip_gzero:N \g_@@_pre_skip }
     \skip_set_eq:NN \l_@@_par_skip \tex_parskip:D
     \skip_zero:N \tex_parskip:D
     \dim_set:Nn \l_@@_shift_dim
@@ -1049,7 +1086,7 @@ Copyright and Licence
 \skip_new:N \l_@@_par_skip
 \cs_new_protected_nopar:Npn \@@_put_box_auxi:
   {
-    \para_raw_noindent: \hbox:n
+    \@@_hbox:n
       {
         \@@_put_box_auxiii:
         \bool_if:NF \g_@@_fake_stuff_bool
@@ -1064,6 +1101,11 @@ Copyright and Licence
         \box_if_empty:NF \g_@@_equation_box
           { \@@_insert_equation: }
       }
+  }
+\cs_new_protected_nopar:Npn \@@_hbox:n
+  {
+    \para_raw_noindent:
+    \hbox:n
   }
 \cs_new_protected_nopar:Npn \@@_put_box_auxii:
   {
@@ -1118,22 +1160,27 @@ Copyright and Licence
   {
     \dim_compare:nNnTF \tex_pagegoal:D < \c_max_dim
       {
-        \skip_vertical:n
+        \skip_gset:Nn \g_@@_pre_skip
           {
               \tex_baselineskip:D
             - \g_@@_prevdepth_dim
             - \g_@@_ht_dim
           }
+        \skip_vertical:N \g_@@_pre_skip
         \dim_set_eq:NN \tex_prevdepth:D \c_@@_ignore_depth_dim
       }
       {
-        \dim_compare:nNnT \tex_topskip:D > \g_@@_ht_dim
+        \dim_compare:nNnTF \tex_topskip:D > \g_@@_ht_dim
           {
             \tex_hrule:D height \c_zero_dim \scan_stop:
-            \skip_vertical:n { -\g_@@_ht_dim }
+            \skip_gset:Nn \g_@@_pre_skip
+              { \tex_topskip:D - \g_@@_ht_dim }
+            \skip_vertical:n { \g_@@_pre_skip - \tex_topskip:D }
           }
+          { \skip_gzero:N \g_@@_pre_skip }
       }
   }
+\skip_new:N \g_@@_pre_skip
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1145,8 +1192,8 @@ Copyright and Licence
       {
         - \l_@@_shift_dim
         - \l_@@_par_skip
+        - \g_@@_pre_skip
         - \g_@@_pos_skip
-        - \box_dp:N \strutbox
       }
     \dim_compare:nNnTF \l_@@_shift_dim > \c_zero_dim
       { \@@_set_next_auxi:n }
@@ -1165,7 +1212,8 @@ Copyright and Licence
                   \box_ht:N \g_@@_stuff_box
                 - \box_ht:N \l_@@_window_box
                 + (   \tex_baselineskip:D * \g_@@_window_int
-                    - \l_@@_shift_dim - \box_dp:N \strutbox ) / 2
+                    - \l_@@_shift_dim
+                    - \g_@@_pre_skip ) / 2
                 - \l_@@_voffset_dim
               }
               { \box_use_drop:N \g_@@_stuff_box }
@@ -1208,7 +1256,7 @@ Copyright and Licence
   }
 \cs_new_protected:Npn \@@_set_next_auxiii:
   {
-    \para_raw_noindent: \hbox:n
+    \@@_hbox:n
       {
         \@@_put_box_auxiii:
         \bool_if:NF \g_@@_fake_stuff_bool
