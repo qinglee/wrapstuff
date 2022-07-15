@@ -135,7 +135,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{1879}
+% \CheckSum{1951}
 % \GetFileId{wrapstuff.sty}
 %
 % \changes{v0}{2022/07/05}{初始版本。}
@@ -320,7 +320,7 @@ Copyright and Licence
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}[int]{\@@_gadd_ht:Nn,\@@_gsub_ht:Nn,\@@_gadd_dp:Nn}
+% \begin{macro}{\@@_gadd_ht:Nn,\@@_gsub_ht:Nn,\@@_gadd_dp:Nn}
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_gadd_ht:Nn #1#2
   { \box_gset_ht:Nn #1 { \box_ht:N #1 + \dim_eval:n {#2} } }
@@ -331,7 +331,7 @@ Copyright and Licence
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}[int]{\@@_next_para:}
+% \begin{macro}{\@@_next_para:}
 % 将 \env{wrapstuff} 环境之后的段落放入内部环境 \env{wrapstuff@par} 中。
 % 为了控制钩子执行顺序，需要使用 |wrapstuff| 标签，
 % 而不用更为方便的 \cs{hook_gput_next_code:nn} 实现。
@@ -451,6 +451,7 @@ Copyright and Licence
               { \l_@@_window_int }
           }
       }
+    \@@_list_indent:
     \cs_gset_eq:NN \@@_para_begin: \@@_empty:
     \vbox_set:Nw \l_@@_body_box
       \dim_set_eq:NN \tex_prevdepth:D \g_@@_prevdepth_dim
@@ -458,13 +459,14 @@ Copyright and Licence
         \int_eval:n { \l_@@_top_int + 1 } ~
         \prg_replicate:nn
           { \l_@@_top_int }
-          { \tex_leftskip:D \l_@@_line_dim }
+          { \l_@@_indent_dim \l_@@_line_dim }
         \c_zero_dim \c_max_dim
       \@@_tex_parameter:
       \@@_display_parameter:
       \para_raw_noindent:
   }
   {
+      \@@_list_kludge:
       \para_raw_end:
       \int_gset_eq:NN \g_@@_line_int \tex_prevgraf:D
     \vbox_set_end:
@@ -493,6 +495,54 @@ Copyright and Licence
 \int_new:N \g_@@_top_int
 \int_gdecr:N \g_@@_top_int
 \bool_new:N \l_@@_hang_bool
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_list_par:, \@@_list_indent:}
+% \LaTeX\ 的 \tn{list} 环境中，为了保持 \tn{parshape}，\tn{par} 被重定义为 |{\@@par}|。
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_list_kludge:
+  {
+    \scan_stop:
+    \int_compare:nNnTF \tex_currentgrouptype:D = \c_one_int
+      {
+        \c_group_end_token
+        \cs_gset_eq:NN \@@_list_group: \c_group_begin_token
+      }
+      { \cs_gset_eq:NN \@@_list_group: \@@_empty: }
+    \legacy_if:nTF { @noitemarg }
+      { \cs_gset_eq:NN \@@_list_if: \@noitemargtrue }
+      { \cs_gset_eq:NN \@@_list_if: \@@_empty: }
+  }
+\cs_new_eq:NN \@@_list_if:    \@@_empty:
+\cs_new_eq:NN \@@_list_group: \@@_empty:
+\hook_gput_code:nnn { env/wrapstuff@par/after }
+  { list }
+  {
+    \@@_list_if:
+    \@@_list_group:
+  }
+\cs_new_protected_nopar:Npn \@@_list_indent:
+  {
+    \dim_set:Nn \l_@@_list_indent_dim
+      {
+        \int_compare:nNnTF \tex_parshape:D = \c_one_int
+          { \tex_parshapeindent:D \c_one_int }
+          { \c_zero_dim }
+      }
+    \dim_set:Nn \l_@@_indent_dim
+      { \tex_leftskip:D + \l_@@_list_indent_dim }
+  }
+\cs_new_protected_nopar:Npn \@@_list_kern:
+  {
+    \dim_compare:nNnT \l_@@_l_dim = \c_zero_dim
+      {
+        \dim_compare:nNnF \l_@@_list_indent_dim = \c_zero_dim
+          { \tex_kern:D - \l_@@_list_indent_dim }
+      }
+  }
+\dim_new:N \l_@@_indent_dim
+\dim_new:N \l_@@_list_indent_dim
 %    \end{macrocode}
 % \end{macro}
 %
@@ -640,7 +690,7 @@ Copyright and Licence
         \cs_set_eq:NN \@@_build_column: \@@_build_column_fuzzy:
       } ,
     column/false .code:n =
-      { \bool_set_true:N \l_@@_column_bool } ,
+      { \bool_set_false:N \l_@@_column_bool } ,
     hsep         .code:n =
       {
         \tl_set:Nn \l_@@_leftsep_tl {#1}
@@ -1022,10 +1072,10 @@ Copyright and Licence
           { \box_set_eq:NN \l_@@_r_box \l_@@_empty_box }
           {
             \box_set_to_last:N \l_@@_r_box
-            \tex_unskip:D
+            \tex_unskip:D \tex_unpenalty:D
           }
         \box_set_to_last:N \l_@@_l_box
-        \tex_unskip:D
+        \tex_unskip:D \tex_unpenalty:D
         \hbox_gset:Nn \g_@@_line_box
           {
             \bool_if:NT \l_@@_attach_equation_bool
@@ -1051,9 +1101,9 @@ Copyright and Licence
 \cs_new_protected_nopar:Npn \@@_build_block_auxiii:
   {
     \box_set_to_last:N \l_@@_r_box
-    \tex_unskip:D
+    \tex_unskip:D \tex_unpenalty:D
     \box_set_to_last:N \l_@@_l_box
-    \tex_unskip:D
+    \tex_unskip:D \tex_unpenalty:D
     \hbox_gset:Nn \g_@@_line_box
       {
         \box_use:N \l_@@_l_box
@@ -1456,14 +1506,19 @@ Copyright and Licence
           }
       }
       {
-        \para_raw_end:
-        \para_raw_noindent:
+        \@@_newline:
         \hbox_unpack_drop:N \l_@@_bottom_box
         \box_if_empty:NF \g_@@_equation_box
           { \@@_insert_equation: }
         \bool_gset_false:N \g_@@_right_move_bool
         \bool_gset_false:N \g_@@_first_save_bool
       }
+  }
+\cs_new_protected_nopar:Npn \@@_newline:
+  {
+    \tex_penalty:D \c_@@_nobreak_int
+    \tex_hfil:D
+    \tex_penalty:D \c_@@_break_int
   }
 \cs_new_protected_nopar:Npn \@@_clear_fake_box:
   {
@@ -1499,6 +1554,7 @@ Copyright and Licence
   {
     \hbox_gset:Nn \g_@@_stuff_box
       {
+        \@@_list_kern:
         \box_move_up:nn
           {
               \l_@@_voffset_dim
@@ -1606,6 +1662,7 @@ Copyright and Licence
       {
         \hbox_gset:Nn \g_@@_stuff_box
           {
+            \@@_list_kern:
             \box_move_down:nn
               {
                   \box_ht:N \g_@@_stuff_box
@@ -1637,6 +1694,7 @@ Copyright and Licence
       {
         \hbox_gset:Nn \g_@@_stuff_box
           {
+            \@@_list_kern:
             \box_move_down:nn
               {
                   \box_ht:N \g_@@_stuff_box
