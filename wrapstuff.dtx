@@ -135,7 +135,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{2141}
+% \CheckSum{2200}
 % \GetFileId{wrapstuff.sty}
 %
 % \changes{v0}{2022/07/05}{初始版本。}
@@ -244,6 +244,7 @@ Copyright and Licence
       }
     \dim_set:Nn \l_@@_width_dim { \l_@@_width_tl }
     \dim_set:Nn \l_@@_height_dim { \l_@@_height_tl }
+    \@@_floatrow_hook:
     \hbox_gset:Nw \g_@@_stuff_box
       \dim_compare:nNnTF \l_@@_width_dim > \c_zero_dim
         { \@@_minipage_begin: }
@@ -477,7 +478,7 @@ Copyright and Licence
     \bool_new:N \g_@@_float_pos_bool
     \cs_gset_protected_nopar:Npn \@@_float_pre_hook:
       { \exp_args:No \@@_float_pre_aux:n { \l_@@_float_tl } }
-    \cs_gset_protected:Npn \@@_float_pre_aux:n #1
+    \cs_new_protected:Npn \@@_float_pre_aux:n #1
       {
         \cs_if_exist_use:cTF { fst@ #1 }
           {
@@ -502,6 +503,57 @@ Copyright and Licence
             \exp_args:Ne \float@makebox
               { \dim_eval:n { \box_wd:N \g_@@_stuff_box } }
           }
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_float_pre_hook:, \@@_float_pos_hook:}
+%    \begin{macrocode}
+\cs_new_eq:NN \@@_floatrow_hook: \@@_empty:
+\hook_gput_code:nnn { package/floatrow/after }
+  { wrapstuff }
+  {
+    \cs_gset_protected_nopar:Npn \@@_floatrow_hook:
+      {
+        \tl_if_empty:NF \l_@@_float_tl
+          {
+            \dim_compare:nNnT \l_@@_width_dim > \c_zero_dim
+              { \@@_floatrow_hook_aux: }
+          }
+      }
+    \cs_new_protected_nopar:Npn \@@_floatrow_hook_aux:
+      {
+        \cs_set_eq:NN \@captype \l_@@_float_tl
+        \killfloatstyle
+        \FR@redefs
+        \dim_zero:N \FBc@wd
+        \exp_args:Ne \flrow@setlist
+          {
+            { \l_@@_float_tl }
+            { wrapfloat }
+            { wrap \l_@@_float_tl }
+          }
+        \FRifFBOX \@@@@setframe \relax \@@@@FStrue
+        \tl_set:Nx \FBB@wd { \dim_use:N \l_@@_width_dim }
+        \FB@fs@wd
+        \dim_set:Nn \l_@@_width_dim { \FBo@wd }
+      }
+    \cs_gset_protected_nopar:Npn \@@_float_pre_hook:
+      { \the \FR@everyfloat }
+    \cs_gset_protected_nopar:Npn \@@_float_pos_hook:
+      {
+        \legacy_if:nTF { FBbuild }
+          {
+            \hbox_gset:Nn \g_@@_stuff_box
+              {
+                \cs_set_eq:NN \@currbox \g_@@_stuff_box
+                \vbox_gset:Nn \g_@@_stuff_box
+                  { \box_use_drop:N \g_@@_stuff_box }
+                \exp_args:No \flrow@FB { \FBB@wd }
+              }
+          }
+          { \cs_undefine:N \flrow@typ@tmpset }
       }
   }
 %    \end{macrocode}
@@ -860,7 +912,7 @@ Copyright and Licence
     width      .tl_set:N = \l_@@_width_tl ,
     height     .tl_set:N = \l_@@_height_tl ,
     voffset    .tl_set:N = \l_@@_voffset_tl ,
-    float      .tl_set:N = \l_@@_float_tl ,
+    float    .tl_set_x:N = \l_@@_float_tl ,
     ratio      .fp_set:N = \l_@@_ratio_fp ,
     top       .int_set:N = \l_@@_top_int ,
     i            .code:n = \@@_swap_true:N \c_true_bool ,
