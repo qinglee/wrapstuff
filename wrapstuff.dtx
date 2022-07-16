@@ -191,7 +191,7 @@ Copyright and Licence
 % \begin{function}{voffset}
 % \end{function}
 %
-% \begin{function}{float}
+% \begin{function}{type}
 % \end{function}
 %
 % \end{documentation}
@@ -276,7 +276,7 @@ Copyright and Licence
     \dim_compare:nNnTF \l_@@_height_dim > \c_zero_dim
       { \begin { minipage } [b] [ \l_@@_height_dim ] [c] { \l_@@_width_dim } }
       { \begin { minipage } [b] { \l_@@_width_dim } }
-    \tl_if_empty:NF \l_@@_float_tl
+    \tl_if_empty:NF \l_@@_type_tl
       { \@@_set_float: }
   }
 \cs_new_protected_nopar:Npn \@@_minipage_end:
@@ -460,7 +460,7 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_set_float:
   {
-    \cs_set_eq:NN \@captype \l_@@_float_tl
+    \cs_set_eq:NN \@captype \l_@@_type_tl
     \@@_float_pre_hook:
     \@@_caption_hook:
     \@floatboxreset
@@ -477,7 +477,7 @@ Copyright and Licence
   {
     \bool_new:N \g_@@_float_pos_bool
     \cs_gset_protected_nopar:Npn \@@_float_pre_hook:
-      { \exp_args:No \@@_float_pre_aux:n { \l_@@_float_tl } }
+      { \exp_args:No \@@_float_pre_aux:n { \l_@@_type_tl } }
     \cs_new_protected:Npn \@@_float_pre_aux:n #1
       {
         \cs_if_exist_use:cTF { fst@ #1 }
@@ -490,7 +490,7 @@ Copyright and Licence
     \cs_gset_protected_nopar:Npn \@@_float_pos_hook:
       {
         \bool_if:NT \g_@@_float_pos_bool
-          { \exp_args:No \@@_float_pos_aux:n { \l_@@_float_tl } }
+          { \exp_args:No \@@_float_pos_aux:n { \l_@@_type_tl } }
       }
     \cs_new_protected:Npn \@@_float_pos_aux:n #1
       {
@@ -516,7 +516,7 @@ Copyright and Licence
   {
     \cs_gset_protected_nopar:Npn \@@_floatrow_hook:
       {
-        \tl_if_empty:NF \l_@@_float_tl
+        \tl_if_empty:NF \l_@@_type_tl
           {
             \dim_compare:nNnT \l_@@_width_dim > \c_zero_dim
               { \@@_floatrow_hook_aux: }
@@ -524,15 +524,15 @@ Copyright and Licence
       }
     \cs_new_protected_nopar:Npn \@@_floatrow_hook_aux:
       {
-        \cs_set_eq:NN \@captype \l_@@_float_tl
+        \cs_set_eq:NN \@captype \l_@@_type_tl
         \killfloatstyle
         \FR@redefs
         \dim_zero:N \FBc@wd
         \exp_args:Ne \flrow@setlist
           {
-            { \l_@@_float_tl }
+            { \l_@@_type_tl }
             { wrapfloat }
-            { wrap \l_@@_float_tl }
+            { wrap \l_@@_type_tl }
           }
         \FRifFBOX \@@@@setframe \relax \@@@@FStrue
         \tl_set:Nx \FBB@wd { \dim_use:N \l_@@_width_dim }
@@ -566,7 +566,7 @@ Copyright and Licence
   { wrapstuff }
   {
     \cs_gset_protected_nopar:Npn \@@_caption_hook:
-      { \exp_args:No \@@_caption_aux:n { \l_@@_float_tl } }
+      { \exp_args:No \@@_caption_aux:n { \l_@@_type_tl } }
     \cs_new_protected:Npn \@@_caption_aux:n #1
       {
         \caption@settype {#1}
@@ -912,7 +912,7 @@ Copyright and Licence
     width      .tl_set:N = \l_@@_width_tl ,
     height     .tl_set:N = \l_@@_height_tl ,
     voffset    .tl_set:N = \l_@@_voffset_tl ,
-    float    .tl_set_x:N = \l_@@_float_tl ,
+    type     .tl_set_x:N = \l_@@_type_tl ,
     ratio      .fp_set:N = \l_@@_ratio_fp ,
     top       .int_set:N = \l_@@_top_int ,
     i            .code:n = \@@_swap_true:N \c_true_bool ,
