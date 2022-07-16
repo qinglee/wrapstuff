@@ -12,6 +12,14 @@ The `wrapstuff` package provides another implementation of text wrapping.
 
 Basic Usage
 -----------
+The package only provides a user environment `wrapstuff`.
+
+    \begin{wrapstuff}[<options>]
+      <wrapping stuff>
+    \end{wrapstuff}
+    <main text>
+
+You can read the package manual (in Chinese) for some explanations.
 
 Contributing
 ------------
@@ -101,7 +109,7 @@ Copyright and Licence
     \file{wrapstuff.sty} {\from{\jobname.dtx}{package}}
     \nopreamble\nopostamble
     \usedir{doc/latex/wrapstuff}
-    \file{README.md}    {\from{\jobname.dtx}{readme}}
+    \file{README.md}     {\from{\jobname.dtx}{readme}}
   }
 
 \endbatchfile
@@ -110,13 +118,16 @@ Copyright and Licence
 \fi
 %</internal>
 %<package>\NeedsTeXFormat{LaTeX2e}
-%<package>\RequirePackage{expl3}
+%<package>\@ifundefined{ExplLoaderFileDate}{\RequirePackage{expl3}}{}
 %<+package>\GetIdInfo$Id$
 %<package>  {Wrapping text around stuff}
 %<package>\ProvidesExplPackage{\ExplFileName}
 %<package>  {\ExplFileDate}{0}{\ExplFileDescription}
 %<*driver>
 \documentclass{ctxdoc}
+\usepackage{wrapstuff}
+\usepackage{graphicx}
+\usepackage{zhlipsum}
 \ExplSyntaxOn
 \makeatletter
 \DeclareDocumentCommand \gitsha { m }
@@ -124,6 +135,17 @@ Copyright and Licence
     \href { https \c_colon_str //github.com/qinglee/wrapstuff/commit/#1 }
           { rev. ~ \texttt{#1} }
   }
+\DeclareDocumentCommand \QIANZIWEN { }
+  {
+    天地玄黄宇宙洪荒日月盈昃辰宿列张
+    寒来暑往秋收冬藏闰馀成岁律召调阳 \par
+    云腾致雨露结为霜金生丽水玉出昆冈 \par
+  }
+\hook_gput_code:nnn { env/Example/before } { wstf }
+  { \trivlist \item \relax }
+\hook_gput_code:nnn { env/Example/after }  { wstf }
+  { \endtrivlist }
+\SideBySideExampleSet { numbers = none }
 \makeatother
 \ExplSyntaxOff
 \begin{document}
@@ -135,7 +157,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{2210}
+% \CheckSum{2254}
 % \GetFileId{wrapstuff.sty}
 %
 % \changes{v0}{2022/07/05}{初始版本。}
@@ -155,46 +177,138 @@ Copyright and Licence
 %
 % \section{基本用法}
 %
+% \pkg{wrapstuff} 的实现依赖 \LaTeX\ 2021-06-01 开始提供的段落钩子，
+% 并依赖 \LaTeXiii\ 2022-04-10 之后的版本。
+%
 % \begin{function}{wrapstuff}
 %   \begin{syntax}
-%     \tn{begin} \Arg{wrapstuff} \oarg{...}
-%       ...
-%     \tn{end} \Arg{wrapstuff}
-%     ...
+%     \tn{begin}\{wrapstuff\}\oarg{选项}
+%       <绕排内容>
+%     \tn{end}\{wrapstuff\}
+%     <正文>
 %   \end{syntax}
+%   \pkg{wrapstuff} 只提供了一个用户环境 \env{wrapstuff}，
+%   会在环境之后的段落开始绕排。例如
+%   \begin{Example}[frame=single,numbers=none,gobble=5]
+%     \begin{wrapstuff}[c,top=1]
+%       \includegraphics[width=\dimeval{\linewidth/3}]{example-image.pdf}
+%     \end{wrapstuff}
+%     \zhlipsum[1][name=zhufu]
+%   \end{Example}
+% \end{function}
+%
+% \begin{function}{\wrapstuffset}
+%   \begin{syntax}
+%     \tn{wrapstuffset} \Arg{选项列表}
+%   \end{syntax}
+%   \pkg{wrapstuff} 的选项可以在调用宏包时设置，也可以通过 \tn{wrapstuffset} 设置。
+%   选项将在下面描述。
 % \end{function}
 %
 % \begin{function}{top}
+%   \begin{syntax}
+%     top = <非负整数>
+%   \end{syntax}
+%   设置在正文段落的第几行之后开始绕排，可以设置为非负整数。
+%   初始值是 |0|。
 % \end{function}
 %
 % \begin{function}{line}
+%   \begin{syntax}
+%     line = <正整数>
+%   \end{syntax}
+%   设置绕排内容占据正文的行数，可以设置正整数。
+%   初始值为空，根据绕排内容的高度自动计算行数。
 % \end{function}
 %
-% \begin{function}{hsep,leftsep,rightsep}
+% \begin{function}{leftsep,rightsep,hsep}
+%   \begin{syntax}
+%     leftsep  = <长度>
+%     rightsep = <长度>
+%     hsep     = <长度>
+%   \end{syntax}
+%   设置绕排内容与正文的左/右间距，\opt{hsep} 选项同时设置 \opt{leftsep} 和 \opt{rightsep}。
+%   初始值是 |1em|。
 % \end{function}
 %
-% \begin{function}{vsep,abovesep,belowsep}
-% \end{function}
-%
-% \begin{function}{column}
+% \begin{function}{abovesep,belowsep,vsep}
+%   \begin{syntax}
+%     abovesep = <长度>
+%     belowsep = <长度>
+%     vsep     = <长度>
+%   \end{syntax}
+%   设置绕排内容与正文的上/下间距，\opt{vsep} 选项同时设置 \opt{abovesep} 和 \opt{belowsep}。
+%   初始值是 |0pt|。
 % \end{function}
 %
 % \begin{function}{l,r,c,i,o,ratio}
+%   \begin{syntax}
+%     l/r/c/i/o
+%     ratio = <实数>
+%   \end{syntax}
+%   选项 \opt{l/r/c/i/o} 分别设置绕排内容位于正文的左侧、右侧、中间、内侧、外侧。
+%   选项 \opt{ratio} 设置绕排内容左侧的正文占据行宽的比例，可以设置为 $[0,1]$ 区间中的合理实数。
+%   初始设置为 |l|，即位于正文的左侧。
+% \end{function}
+%
+% \begin{function}{column}
+%   \begin{syntax}
+%     column = <(true)|false|par>
+%   \end{syntax}
+%   控制是否将绕排内容两侧的正文分栏显示，只有设置 |c| 选项或者
+%   设置 \opt{ratio} 不等于 $0$ 或者 $1$ 时才有效。
+%   \begin{SideBySideExample}[xrightmargin=\dimeval{20em+5mm}]
+%     \begin{wrapstuff}[c,top=1]
+%       \rule{2em}{2em}
+%     \end{wrapstuff}
+%     \QIANZIWEN
+%     \begin{wrapstuff}[c,top=1,column=par]
+%       \rule{2em}{2em}
+%     \end{wrapstuff}
+%     \QIANZIWEN
+%     \begin{wrapstuff}[c,top=0,column=false]
+%       \rule{2em}{2em}
+%     \end{wrapstuff}
+%     \QIANZIWEN
+%   \end{SideBySideExample}
 % \end{function}
 %
 % \begin{function}{linewidth}
+%   \begin{syntax}
+%     linewidth = <宽度>
+%   \end{syntax}
+%   设置正文段落的行宽，初始设置为 |\linewidth|，一般不需要调整。
 % \end{function}
 %
 % \begin{function}{width}
+%   \begin{syntax}
+%     width = <宽度>
+%   \end{syntax}
+%   设置绕排内容的宽度，初始值为 |0pt|，代表自然宽度。
 % \end{function}
 %
 % \begin{function}{height}
+%   \begin{syntax}
+%     height = <高度>
+%   \end{syntax}
+%   设置绕排内容的高度，初始值为 |0pt|，代表自然高度。
 % \end{function}
 %
 % \begin{function}{voffset}
+%   \begin{syntax}
+%     voffset = <长度>
+%   \end{syntax}
+%   用于调整绕排内容的竖直位置，初始值为 |0pt|。
 % \end{function}
 %
 % \begin{function}{type}
+%   \begin{syntax}
+%     type = <浮动体类型>
+%   \end{syntax}
+%   设置绕排内容的浮动体类型，初始值为空。
+%   如果需要在 \env{wrapstuff} 环境中使用 \tn{caption} 命令，
+%   则需要设置 \opt{type} 为 \opt{figure} 或 \opt{table} 等类型，
+%   并需要同时设置 \opt{width} 指定宽度。
 % \end{function}
 %
 % \end{documentation}
@@ -213,6 +327,31 @@ Copyright and Licence
 %
 %    \begin{macrocode}
 %<@@=wstf>
+%    \end{macrocode}
+%
+% \pkg{wrapstuff} 的实现依赖 \LaTeX\ 2021-06-01 开始提供的段落钩子。
+%    \begin{macrocode}
+\@ifl@t@r \fmtversion { 2021-06-01 }
+  { }
+  {
+    \msg_new:nnn { wrapstuff } { latex-too-old }
+      {
+        You~need~to~update~your~LaTeX~to~the~latest~release. \\
+        Loading~wrapstuff~will~abort!
+      }
+    \msg_critical:nn { wrapstuff } { latex-too-old }
+  }
+\@ifl@t@r \ExplLoaderFileDate { 2022-04-10 }
+  { }
+  {
+    \msg_new:nnn { wrapstuff } { latex3-too-old }
+      {
+        You~need~to~update~your~installation~of~the~bundles~
+        "l3kernel"~and~"l3packages". \\
+        Loading~wrapstuff~will~abort!
+      }
+    \msg_critical:nn { wrapstuff } { latex3-too-old }
+  }
 %    \end{macrocode}
 %
 %    \begin{macrocode}
@@ -591,7 +730,13 @@ Copyright and Licence
     \int_set:Nn \l_@@_window_int
       {
         \tl_if_empty:NTF \l_@@_line_tl
-          { \@@_unit:n { \box_ht_plus_dp:N \g_@@_stuff_box } }
+          {
+            \@@_unit:n
+              {
+                  \box_ht_plus_dp:N \g_@@_stuff_box
+                + \l_@@_min_dim
+              }
+          }
           { \l_@@_line_tl }
       }
     \bool_if:NF \g_@@_fake_stuff_bool
@@ -784,111 +929,6 @@ Copyright and Licence
     \vbox_unpack_drop:N #1
     \dim_set_eq:NN \tex_prevdepth:D \g_@@_prevdepth_dim
   }
-%    \end{macrocode}
-% \end{macro}
-%
-% \begin{macro}{top}
-%    \begin{macrocode}
-\keys_define:nn { wrapstuff }
-  {
-    abovesep   .tl_set:N = \l_@@_abovesep_tl ,
-    belowsep   .tl_set:N = \l_@@_belowsep_tl ,
-    leftsep    .tl_set:N = \l_@@_leftsep_tl ,
-    rightsep   .tl_set:N = \l_@@_rightsep_tl ,
-    linewidth  .tl_set:N = \l_@@_linewidth_tl ,
-    line       .tl_set:N = \l_@@_line_tl ,
-    width      .tl_set:N = \l_@@_width_tl ,
-    height     .tl_set:N = \l_@@_height_tl ,
-    voffset    .tl_set:N = \l_@@_voffset_tl ,
-    type       .tl_set:N = \l_@@_type_tl ,
-    ratio      .fp_set:N = \l_@@_ratio_fp ,
-    top       .int_set:N = \l_@@_top_int ,
-    i            .code:n = \@@_swap_true:N \c_true_bool ,
-    o            .code:n = \@@_swap_true:N \c_false_bool ,
-    l            .code:n = \@@_swap_false:N \c_zero_fp ,
-    r            .code:n = \@@_swap_false:N \c_one_fp ,
-    c            .code:n = \@@_swap_false:N \c_@@_c_fp ,
-    column     .choice: ,
-    column/true  .code:n =
-      {
-        \bool_set_true:N \l_@@_column_bool
-        \cs_set_eq:NN \@@_build_column: \@@_build_column_strict:
-      } ,
-    column/par   .code:n =
-      {
-        \bool_set_true:N \l_@@_column_bool
-        \cs_set_eq:NN \@@_build_column: \@@_build_column_fuzzy:
-      } ,
-    column/false .code:n =
-      { \bool_set_false:N \l_@@_column_bool } ,
-    hsep         .code:n =
-      {
-        \tl_set:Nn \l_@@_leftsep_tl {#1}
-        \tl_set_eq:NN \l_@@_rightsep_tl \l_@@_leftsep_tl
-      } ,
-    vsep         .code:n =
-      {
-        \tl_set:Nn \l_@@_abovesep_tl {#1}
-        \tl_set_eq:NN \l_@@_belowsep_tl \l_@@_abovesep_tl
-      } ,
-    leftsep    .groups:n = main ,
-    rightsep   .groups:n = main ,
-    hsep       .groups:n = main ,
-    linewidth  .groups:n = main ,
-    line       .groups:n = main ,
-    top        .groups:n = main ,
-    column     .groups:n = main ,
-    voffset    .groups:n = main ,
-    abovesep   .groups:n = stuff ,
-    belowsep   .groups:n = stuff ,
-    vsep       .groups:n = stuff ,
-    width      .groups:n = stuff ,
-    height     .groups:n = stuff ,
-    float      .groups:n = stuff ,
-    ratio      .groups:n = ratio ,
-    l          .groups:n = ratio ,
-    r          .groups:n = ratio ,
-    c          .groups:n = ratio ,
-    i          .groups:n = ratio ,
-    o          .groups:n = ratio ,
-    column    .default:n = true ,
-    abovesep  .initial:n = \c_zero_dim ,
-    belowsep  .initial:n = \c_zero_dim ,
-    leftsep   .initial:n = 1em ,
-    rightsep  .initial:n = 1em ,
-    linewidth .initial:n = \linewidth ,
-    voffset   .initial:n = \c_zero_dim ,
-    width     .initial:n = \c_zero_dim ,
-    height    .initial:n = \c_zero_dim ,
-    abovesep  .value_required:n = true ,
-    belowsep  .value_required:n = true ,
-    leftsep   .value_required:n = true ,
-    rightsep  .value_required:n = true ,
-    linewidth .value_required:n = true ,
-    width     .value_required:n = true ,
-    height    .value_required:n = true ,
-    voffset   .value_required:n = true ,
-    hsep      .value_required:n = true ,
-    vsep      .value_required:n = true ,
-    l        .value_forbidden:n = true ,
-    r        .value_forbidden:n = true ,
-    c        .value_forbidden:n = true ,
-    i        .value_forbidden:n = true ,
-    o        .value_forbidden:n = true
-  }
-\cs_new_protected_nopar:Npn \@@_swap_true:N
-  {
-    \bool_set_true:N \l_@@_swap_bool
-    \bool_set_eq:NN \l_@@_inner_bool
-  }
-\cs_new_protected_nopar:Npn \@@_swap_false:N
-  {
-    \bool_set_false:N \l_@@_swap_bool
-    \fp_set_eq:NN \l_@@_ratio_fp
-  }
-\fp_const:Nn \c_@@_c_fp { 0.5 }
-\AtEndOfPackage
-  { \keys_set:nn { wrapstuff } { column = true } }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1405,11 +1445,23 @@ Copyright and Licence
           { \tex_baselineskip:D - \g_@@_ht_dim }
         \dim_gset_eq:NN \g_@@_first_dp_dim \g_@@_prevdepth_dim
       }
-    \int_compare:nNnT \g_@@_window_int = \g_@@_line_int
-      { \@@_column_move_entire: }
+    \int_case:nnT { \g_@@_window_int }
+      {
+        { \c_zero_dim } { \@@_column_move_entire_aux: }
+        { \g_@@_line_int } { \@@_column_move_entire: }
+      }
+  }
+\cs_new_protected_nopar:Npn \@@_column_move_entire_aux:
+  {
+    \bool_gset_true:N \g_@@_entire_bool
+    \bool_gset_true:N \g_@@_right_move_bool
+    \bool_gset_true:N \g_@@_next_hang_bool
   }
 \cs_new_protected_nopar:Npn \@@_column_move_entire:
   {
+    \dim_gsub:Nn \g_@@_first_sep_dim
+      { \box_dp:N \l_@@_window_box }
+    \bool_gset_false:N \g_@@_entire_bool
     \dim_gzero:N \g_@@_column_right_ht_dim
     \dim_gset_eq:NN \g_@@_dp_dim \g_@@_first_dp_dim
     \@@_column_right_move_set:nn
@@ -1445,7 +1497,10 @@ Copyright and Licence
   {
     \@@_repack_left_box:
     \dim_gset:Nn \g_@@_hang_ht_dim
-      { \g_@@_stuff_ht_dim - \box_ht_plus_dp:N \l_@@_r_box }
+      {
+        \g_@@_stuff_ht_dim - \tex_baselineskip:D *
+          \@@_unit:n { \box_ht_plus_dp:N \l_@@_r_box }
+      }
     \int_compare:nNnTF \g_@@_window_int > \c_zero_int
       {
         \dim_gset:Nn \g_@@_column_left_dim
@@ -1461,6 +1516,7 @@ Copyright and Licence
           { \box_ht:N \l_@@_l_box - \box_ht:N \l_@@_r_box }
         \dim_gset:Nn \g_@@_first_sep_dim
           { \tex_baselineskip:D - \g_@@_ht_dim }
+        \bool_gset_true:N \g_@@_right_move_bool
         \bool_gset_true:N \g_@@_next_hang_bool
       }
     \hbox_gset_to_wd:Nnn \g_@@_window_box
@@ -1479,10 +1535,14 @@ Copyright and Licence
   }
 \cs_new_protected_nopar:Npn \@@_next_hang_para:
   {
-    \@@_column_right_move_set:nn
-      { \g_@@_hang_ht_dim }
-      { \g_@@_column_left_dim }
-    \int_gzero:N \g_@@_window_int
+    \bool_if:NTF \g_@@_entire_bool
+      { \@@_column_move_entire: }
+      {
+        \@@_column_right_move_set:nn
+          { \g_@@_hang_ht_dim }
+          { \g_@@_column_left_dim }
+        \int_gzero:N \g_@@_window_int
+      }
   }
 \cs_new_protected_nopar:Npn \@@_build_column_strict_auxiii:
   {
@@ -1525,6 +1585,7 @@ Copyright and Licence
 \dim_new:N \g_@@_first_sep_dim
 \dim_new:N \g_@@_column_left_dim
 \dim_new:N \g_@@_column_right_ht_dim
+\bool_new:N \g_@@_entire_bool
 \bool_new:N \g_@@_next_hang_bool
 \bool_new:N \g_@@_first_save_bool
 \bool_new:N \g_@@_column_right_bool
@@ -2144,6 +2205,126 @@ Copyright and Licence
   }
 %    \end{macrocode}
 % \end{macro}
+%
+% \begin{macro}{top}
+%    \begin{macrocode}
+\keys_define:nn { wrapstuff }
+  {
+    abovesep   .tl_set:N = \l_@@_abovesep_tl ,
+    belowsep   .tl_set:N = \l_@@_belowsep_tl ,
+    leftsep    .tl_set:N = \l_@@_leftsep_tl ,
+    rightsep   .tl_set:N = \l_@@_rightsep_tl ,
+    linewidth  .tl_set:N = \l_@@_linewidth_tl ,
+    line       .tl_set:N = \l_@@_line_tl ,
+    width      .tl_set:N = \l_@@_width_tl ,
+    height     .tl_set:N = \l_@@_height_tl ,
+    voffset    .tl_set:N = \l_@@_voffset_tl ,
+    type       .tl_set:N = \l_@@_type_tl ,
+    ratio      .fp_set:N = \l_@@_ratio_fp ,
+    top       .int_set:N = \l_@@_top_int ,
+    i            .code:n = \@@_swap_true:N \c_true_bool ,
+    o            .code:n = \@@_swap_true:N \c_false_bool ,
+    l            .code:n = \@@_swap_false:N \c_zero_fp ,
+    r            .code:n = \@@_swap_false:N \c_one_fp ,
+    c            .code:n = \@@_swap_false:N \c_@@_c_fp ,
+    column     .choice: ,
+    column/true  .code:n =
+      {
+        \bool_set_true:N \l_@@_column_bool
+        \cs_set_eq:NN \@@_build_column: \@@_build_column_strict:
+      } ,
+    column/par   .code:n =
+      {
+        \bool_set_true:N \l_@@_column_bool
+        \cs_set_eq:NN \@@_build_column: \@@_build_column_fuzzy:
+      } ,
+    column/false .code:n =
+      { \bool_set_false:N \l_@@_column_bool } ,
+    hsep         .code:n =
+      {
+        \tl_set:Nn \l_@@_leftsep_tl {#1}
+        \tl_set_eq:NN \l_@@_rightsep_tl \l_@@_leftsep_tl
+      } ,
+    vsep         .code:n =
+      {
+        \tl_set:Nn \l_@@_abovesep_tl {#1}
+        \tl_set_eq:NN \l_@@_belowsep_tl \l_@@_abovesep_tl
+      } ,
+    leftsep    .groups:n = main ,
+    rightsep   .groups:n = main ,
+    hsep       .groups:n = main ,
+    linewidth  .groups:n = main ,
+    line       .groups:n = main ,
+    top        .groups:n = main ,
+    column     .groups:n = main ,
+    voffset    .groups:n = main ,
+    abovesep   .groups:n = stuff ,
+    belowsep   .groups:n = stuff ,
+    vsep       .groups:n = stuff ,
+    width      .groups:n = stuff ,
+    height     .groups:n = stuff ,
+    float      .groups:n = stuff ,
+    ratio      .groups:n = ratio ,
+    l          .groups:n = ratio ,
+    r          .groups:n = ratio ,
+    c          .groups:n = ratio ,
+    i          .groups:n = ratio ,
+    o          .groups:n = ratio ,
+    column    .default:n = true ,
+    column    .initial:n = true ,
+    abovesep  .initial:n = \c_zero_dim ,
+    belowsep  .initial:n = \c_zero_dim ,
+    leftsep   .initial:n = 1em ,
+    rightsep  .initial:n = 1em ,
+    linewidth .initial:n = \linewidth ,
+    voffset   .initial:n = \c_zero_dim ,
+    width     .initial:n = \c_zero_dim ,
+    height    .initial:n = \c_zero_dim ,
+    abovesep  .value_required:n = true ,
+    belowsep  .value_required:n = true ,
+    leftsep   .value_required:n = true ,
+    rightsep  .value_required:n = true ,
+    linewidth .value_required:n = true ,
+    width     .value_required:n = true ,
+    height    .value_required:n = true ,
+    voffset   .value_required:n = true ,
+    hsep      .value_required:n = true ,
+    vsep      .value_required:n = true ,
+    l        .value_forbidden:n = true ,
+    r        .value_forbidden:n = true ,
+    c        .value_forbidden:n = true ,
+    i        .value_forbidden:n = true ,
+    o        .value_forbidden:n = true
+  }
+\cs_new_protected_nopar:Npn \@@_swap_true:N
+  {
+    \bool_set_true:N \l_@@_swap_bool
+    \bool_set_eq:NN \l_@@_inner_bool
+  }
+\cs_new_protected_nopar:Npn \@@_swap_false:N
+  {
+    \bool_set_false:N \l_@@_swap_bool
+    \fp_set_eq:NN \l_@@_ratio_fp
+  }
+\fp_const:Nn \c_@@_c_fp { 0.5 }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\wrapstuffset}
+%    \begin{macrocode}
+\NewDocumentCommand \wrapstuffset { m }
+  { \keys_set:nn { wrapstuff } {#1} }
+%    \end{macrocode}
+% \end{macro}
+%
+%    \begin{macrocode}
+\cs_if_exist:NTF \ProcessKeyOptions
+  { \ProcessKeyOptions [ wrapstuff ] }
+  {
+    \RequirePackage { l3keys2e }
+    \ProcessKeysOptions { wrapstuff }
+  }
+%    \end{macrocode}
 %
 %    \begin{macrocode}
 %</package>
