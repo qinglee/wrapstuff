@@ -141,6 +141,8 @@ Copyright and Licence
     寒来暑往秋收冬藏闰馀成岁律召调阳 \par
     云腾致雨露结为霜金生丽水玉出昆冈 \par
   }
+\DeclareDocumentCommand \IMAGE { m m }
+  { \includegraphics [ width = \dim_eval:n {#1} ] { example-image-#2.pdf } }
 \hook_gput_code:nnn { env/Example/before } { wstf }
   { \trivlist \item \relax }
 \hook_gput_code:nnn { env/Example/after }  { wstf }
@@ -157,7 +159,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{2254}
+% \CheckSum{2450}
 % \GetFileId{wrapstuff.sty}
 %
 % \changes{v0}{2022/07/05}{初始版本。}
@@ -167,16 +169,11 @@ Copyright and Licence
 % \date{\ExplFileDate\thanks{\gitsha{\ExplFileVersion}.}}
 % \maketitle
 %
-% \begin{abstract}
-%
-% \pkg{wrapstuff} 宏包提供了图文绕排的另一种实现。
-%
-% \end{abstract}
-%
 % \begin{documentation}
 %
 % \section{基本用法}
 %
+% \pkg{wrapstuff} 宏包提供了图文绕排的另一种实现。
 % \pkg{wrapstuff} 的实现依赖 \LaTeX\ 2021-06-01 开始提供的段落钩子，
 % 并依赖 \LaTeXiii\ 2022-04-10 之后的版本。
 %
@@ -246,6 +243,7 @@ Copyright and Licence
 %     l/r/c/i/o
 %     ratio = <实数>
 %   \end{syntax}
+%   这些选项用于设置绕排内容位于正文中的位置。
 %   选项 \opt{l/r/c/i/o} 分别设置绕排内容位于正文的左侧、右侧、中间、内侧、外侧。
 %   选项 \opt{ratio} 设置绕排内容左侧的正文占据行宽的比例，可以设置为 $[0,1]$ 区间中的合理实数。
 %   初始设置为 |l|，即位于正文的左侧。
@@ -259,15 +257,15 @@ Copyright and Licence
 %   设置 \opt{ratio} 不等于 $0$ 或者 $1$ 时才有效。
 %   \begin{SideBySideExample}[xrightmargin=\dimeval{20em+5mm}]
 %     \begin{wrapstuff}[c,top=1]
-%       \rule{2em}{2em}
+%       \IMAGE{2em}{a}
 %     \end{wrapstuff}
 %     \QIANZIWEN
 %     \begin{wrapstuff}[c,top=1,column=par]
-%       \rule{2em}{2em}
+%       \IMAGE{2em}{b}
 %     \end{wrapstuff}
 %     \QIANZIWEN
 %     \begin{wrapstuff}[c,top=0,column=false]
-%       \rule{2em}{2em}
+%       \IMAGE{2em}{c}
 %     \end{wrapstuff}
 %     \QIANZIWEN
 %   \end{SideBySideExample}
@@ -309,6 +307,14 @@ Copyright and Licence
 %   如果需要在 \env{wrapstuff} 环境中使用 \tn{caption} 命令，
 %   则需要设置 \opt{type} 为 \opt{figure} 或 \opt{table} 等类型，
 %   并需要同时设置 \opt{width} 指定宽度。
+%   \begin{SideBySideExample}[xrightmargin=\dimeval{18em+5mm}]
+%     \begin{wrapstuff}[r,type=figure,width=5em]
+%       \centering
+%       \IMAGE{4em}{plain}
+%       \caption{示例}
+%     \end{wrapstuff}
+%     \QIANZIWEN
+%   \end{SideBySideExample}
 % \end{function}
 %
 % \end{documentation}
@@ -397,8 +403,7 @@ Copyright and Licence
     \dim_compare:nNnTF \l_@@_width_dim > \c_zero_dim
       { \@@_minipage_end: }
       { \@@_hbox_end: }
-    \@@_gadd_ht:Nn \g_@@_stuff_box { \l_@@_abovesep_tl }
-    \@@_gadd_dp:Nn \g_@@_stuff_box { \l_@@_belowsep_tl }
+    \@@_set_vsep:
     \dim_gset:Nn \g_@@_stuff_ht_dim
       { \box_ht_plus_dp:N \g_@@_stuff_box }
     \dim_gzero:N \g_@@_fake_wd_dim
@@ -453,9 +458,27 @@ Copyright and Licence
     \box_gset_ht:Nn \g_@@_stuff_box { \l_@@_height_dim }
     \box_gset_dp:Nn \g_@@_stuff_box { \c_zero_dim }
   }
+\cs_new_protected_nopar:Npn \@@_set_vsep:
+  {
+    \@@_gadd_ht:Nn \g_@@_stuff_box { \l_@@_abovesep_tl }
+    \dim_set:Nn \l_@@_shift_dim { \l_@@_belowsep_tl }
+    \dim_compare:nNnF \l_@@_shift_dim = \c_zero_dim
+      { \@@_set_belowsep: }
+  }
+\cs_new_protected_nopar:Npn \@@_set_belowsep:
+  {
+    \hbox_gset:Nn \g_@@_stuff_box
+      {
+        \box_move_up:nn
+          { \l_@@_shift_dim + \box_dp:N \g_@@_stuff_box }
+          { \box_use:N \g_@@_stuff_box }
+      }
+    \box_gset_dp:Nn \g_@@_stuff_box { \c_zero_dim }
+  }
 \tl_new:N \l_@@_main_kv_tl
 \tl_new:N \g_@@_main_setting_tl
 \box_new:N \g_@@_stuff_box
+\dim_new:N \l_@@_shift_dim
 \dim_new:N \l_@@_width_dim
 \dim_new:N \l_@@_height_dim
 \dim_new:N \g_@@_prevdepth_dim
@@ -558,14 +581,12 @@ Copyright and Licence
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\@@_gadd_ht:Nn,\@@_gsub_ht:Nn,\@@_gadd_dp:Nn}
+% \begin{macro}{\@@_gadd_ht:Nn,\@@_gsub_ht:Nn}
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_gadd_ht:Nn #1#2
   { \box_gset_ht:Nn #1 { \box_ht:N #1 + \dim_eval:n {#2} } }
 \cs_new_protected:Npn \@@_gsub_ht:Nn #1#2
   { \box_gset_ht:Nn #1 { \box_ht:N #1 - \dim_eval:n {#2} } }
-\cs_new_protected:Npn \@@_gadd_dp:Nn #1#2
-  { \box_gset_dp:Nn #1 { \box_dp:N #1 + \dim_eval:n {#2} } }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -609,6 +630,7 @@ Copyright and Licence
     \dim_set:Nn \l_@@_voffset_dim { \l_@@_voffset_tl }
     \dim_set:Nn \l_@@_line_dim { \l_@@_linewidth_tl }
     \dim_set:Nn \l_@@_min_dim { \box_dp:N \strutbox }
+    \dim_set_eq:NN \l_@@_main_width_dim \l_@@_line_dim
     \dim_sub:Nn \l_@@_line_dim
       { \tex_leftskip:D + \tex_rightskip:D }
     \dim_set:Nn \l_@@_window_dim
@@ -641,25 +663,26 @@ Copyright and Licence
               { \l_@@_window_int }
           }
       }
-    \@@_list_indent:
     \cs_gset_eq:NN \@@_para_begin: \@@_empty:
+    \@@_save_parshape:
     \vbox_set:Nw \l_@@_body_box
       \dim_set_eq:NN \tex_prevdepth:D \g_@@_prevdepth_dim
-      \tex_parshape:D
-        \int_eval:n { \l_@@_top_int + 1 } ~
-        \prg_replicate:nn
-          { \l_@@_top_int }
-          { \l_@@_indent_dim \l_@@_line_dim }
-        \c_zero_dim \c_max_dim
+      \@@_save_tex_skip:
       \@@_tex_parameter:
+      \@@_restore_parshape:
       \@@_display_parameter:
       \para_raw_noindent:
   }
   {
-      \@@_list_kludge:
+      \@@_save_parshape:
+      \@@_save_tex_skip:
+      \@@_group_kludge:
+      \@@_tex_parameter:
+      \@@_make_main_parshape:
       \para_raw_end:
       \int_gset_eq:NN \g_@@_line_int \tex_prevgraf:D
     \vbox_set_end:
+    \@@_adjust_tex_skip:
     \cs_gset_eq:NN \@@_para_end: \@@_empty:
     \int_compare:nNnTF \g_@@_line_int > \l_@@_top_int
       { \@@_build_par: }
@@ -682,6 +705,7 @@ Copyright and Licence
 \dim_new:N \l_@@_leftsep_dim
 \dim_new:N \l_@@_rightsep_dim
 \dim_new:N \g_@@_window_ht_dim
+\dim_new:N \l_@@_main_width_dim
 \int_new:N \g_@@_top_int
 \int_gdecr:N \g_@@_top_int
 \bool_new:N \l_@@_hang_bool
@@ -767,51 +791,118 @@ Copyright and Licence
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\@@_list_par:, \@@_list_indent:}
+% \begin{macro}{\@@_make_main_parshape:}
+% 主要处理用于标题悬挂的 \tn{@hangfrom} 和用于列表环境的 \tn{parshape}。
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_make_main_parshape:
+  {
+    \int_compare:nNnTF \g_@@_parshape_int = \c_one_int
+      { \@@_make_main_parshape_aux: }
+      {
+        \dim_compare:nNnTF \g_@@_hangindent_dim > \c_zero_dim
+          {
+            \int_compare:nNnTF \g_@@_hangafter_int = \c_one_int
+              { \@@_make_hangfrom: }
+              { \@@_make_main_parshape_aux: }
+          }
+          { \@@_make_main_parshape_aux: }
+      }
+  }
+\cs_new_protected_nopar:Npn \@@_make_main_parshape_aux:
+  {
+    \bool_gset_false:N \g_@@_hangfrom_bool
+    \tex_parshape:D
+      \int_eval:n { \l_@@_top_int + 1 } ~
+      \prg_replicate:nn
+        { \l_@@_top_int }
+        { \g_@@_parshape_indent_dim \g_@@_parshape_length_dim }
+      \c_zero_dim \c_max_dim
+  }
+\cs_new_protected_nopar:Npn \@@_save_parshape:
+  {
+    \int_gset_eq:NN \g_@@_parshape_int \tex_parshape:D
+    \int_compare:nNnTF \g_@@_parshape_int = \c_one_int
+      {
+        \dim_gset:Nn \g_@@_parshape_indent_dim
+          { \tex_parshapeindent:D \c_one_int }
+        \dim_gset:Nn \g_@@_parshape_length_dim
+          { \tex_parshapelength:D \c_one_int }
+      }
+      {
+        \int_gzero:N \g_@@_parshape_int
+        \dim_gzero:N \g_@@_parshape_indent_dim
+        \dim_gset_eq:NN \g_@@_parshape_length_dim \l_@@_main_width_dim
+        \int_gset_eq:NN \g_@@_hangafter_int  \tex_hangafter:D
+        \dim_gset_eq:NN \g_@@_hangindent_dim \tex_hangindent:D
+      }
+  }
+\cs_new_protected_nopar:Npn \@@_restore_parshape:
+  {
+    \int_compare:nNnTF \g_@@_parshape_int = \c_one_int
+      {
+        \tex_parshape:D \g_@@_parshape_int
+          \g_@@_parshape_indent_dim \g_@@_parshape_length_dim
+      }
+      { \@@_restore_hangfrom: }
+  }
+\cs_new_protected_nopar:Npn \@@_make_hangfrom:
+  {
+    \bool_if:NTF \l_@@_hang_bool
+      { \@@_make_hangfrom_aux: }
+      { \@@_make_main_parshape_aux: }
+  }
+\cs_new_protected_nopar:Npn \@@_make_hangfrom_aux:
+  {
+    \@@_restore_hangfrom:
+    \bool_gset_true:N \g_@@_hangfrom_bool
+    \dim_set_eq:NN \tex_hsize:D \l_@@_window_dim
+  }
+\cs_new_protected_nopar:Npn \@@_restore_hangfrom:
+  {
+    \int_set_eq:NN \tex_hangafter:D  \g_@@_hangafter_int
+    \dim_set_eq:NN \tex_hangindent:D \g_@@_hangindent_dim
+  }
+\bool_new:N \g_@@_hangfrom_bool
+\int_new:N \g_@@_parshape_int
+\int_new:N \g_@@_hangafter_int
+\dim_new:N \g_@@_hangindent_dim
+\dim_new:N \g_@@_parshape_indent_dim
+\dim_new:N \g_@@_parshape_length_dim
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_group_kludge:}
 % \LaTeX\ 的 \tn{list} 环境中，为了保持 \tn{parshape}，\tn{par} 被重定义为 |{\@@par}|。
 %    \begin{macrocode}
-\cs_new_protected_nopar:Npn \@@_list_kludge:
+\cs_new_protected_nopar:Npn \@@_group_kludge:
   {
     \scan_stop:
     \int_compare:nNnTF \tex_currentgrouptype:D = \c_one_int
       {
         \c_group_end_token
-        \cs_gset_eq:NN \@@_list_group: \c_group_begin_token
+        \cs_gset_eq:NN \@@_group_begin: \c_group_begin_token
       }
-      { \cs_gset_eq:NN \@@_list_group: \@@_empty: }
+      { \cs_gset_eq:NN \@@_group_begin: \@@_empty: }
     \legacy_if:nTF { @noitemarg }
-      { \cs_gset_eq:NN \@@_list_if: \@noitemargtrue }
-      { \cs_gset_eq:NN \@@_list_if: \@@_empty: }
+      { \cs_gset_eq:NN \@@_set_itemarg: \@noitemargtrue }
+      { \cs_gset_eq:NN \@@_set_itemarg: \@@_empty: }
   }
-\cs_new_eq:NN \@@_list_if:    \@@_empty:
-\cs_new_eq:NN \@@_list_group: \@@_empty:
+\cs_new_eq:NN \@@_set_itemarg: \@@_empty:
+\cs_new_eq:NN \@@_group_begin: \@@_empty:
 \hook_gput_code:nnn { env/wrapstuff@par/after }
   { list }
   {
-    \@@_list_if:
-    \@@_list_group:
+    \@@_set_itemarg:
+    \@@_group_begin:
   }
-\cs_new_protected_nopar:Npn \@@_list_indent:
-  {
-    \dim_set:Nn \l_@@_list_indent_dim
-      {
-        \int_compare:nNnTF \tex_parshape:D = \c_one_int
-          { \tex_parshapeindent:D \c_one_int }
-          { \c_zero_dim }
-      }
-    \dim_set:Nn \l_@@_indent_dim
-      { \tex_leftskip:D + \l_@@_list_indent_dim }
-  }
-\cs_new_protected_nopar:Npn \@@_list_kern:
+\cs_new_protected_nopar:Npn \@@_parshape_kern:
   {
     \dim_compare:nNnT \l_@@_l_dim = \c_zero_dim
       {
-        \dim_compare:nNnF \l_@@_list_indent_dim = \c_zero_dim
-          { \tex_kern:D - \l_@@_list_indent_dim }
+        \dim_compare:nNnF \g_@@_parshape_indent_dim = \c_zero_dim
+          { \tex_kern:D - \g_@@_parshape_indent_dim }
       }
   }
-\dim_new:N \l_@@_indent_dim
-\dim_new:N \l_@@_list_indent_dim
 %    \end{macrocode}
 % \end{macro}
 %
@@ -834,8 +925,24 @@ Copyright and Licence
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\@@_tex_parameter:}
+% \begin{macro}{\@@_save_tex_skip:,\@@_tex_parameter:}
 %    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_save_tex_skip:
+  {
+    \skip_gset_eq:NN \g_@@_left_skip \tex_leftskip:D
+    \skip_gset_eq:NN \g_@@_right_skip \tex_rightskip:D
+    \skip_gset_eq:NN \g_@@_parfill_skip \tex_parfillskip:D
+    \skip_gset_eq:NN \g_@@_baseline_skip \tex_baselineskip:D
+    \skip_gset:Nn \g_@@_main_left_skip { - \tex_leftskip:D }
+  }
+\cs_new_protected_nopar:Npn \@@_adjust_tex_skip:
+  {
+    \@@_adjust_skip:N \g_@@_left_skip
+    \@@_adjust_skip:N \g_@@_right_skip
+    \@@_adjust_skip:N \g_@@_parfill_skip
+  }
+\cs_new_protected:Npn \@@_adjust_skip:N #1
+  { \skip_gsub:Nn #1 { \dim_eval:n {#1} } }
 \cs_new_protected_nopar:Npn \@@_tex_parameter:
   {
     \int_zero:N \tex_clubpenalty:D
@@ -846,10 +953,15 @@ Copyright and Licence
     \int_zero:N \tex_widowpenalties:D
     \int_zero:N \tex_interlinepenalties:D
     \int_zero:N \tex_displaywidowpenalties:D
-    \skip_zero:N \tex_leftskip:D
-    \skip_zero:N \tex_rightskip:D
-    \skip_set_eq:NN \tex_parfillskip:D \@flushglue
+    \skip_set_eq:NN \tex_leftskip:D \g_@@_left_skip
+    \skip_set_eq:NN \tex_rightskip:D \g_@@_right_skip
+    \skip_set_eq:NN \tex_parfillskip:D \g_@@_parfill_skip
   }
+\skip_new:N \g_@@_left_skip
+\skip_new:N \g_@@_right_skip
+\skip_new:N \g_@@_parfill_skip
+\skip_new:N \g_@@_baseline_skip
+\skip_new:N \g_@@_main_left_skip
 %    \end{macrocode}
 % \end{macro}
 %
@@ -877,6 +989,13 @@ Copyright and Licence
 \cs_new_protected_nopar:Npn \@@_build_par:
   {
     \int_gset:Nn \g_@@_top_int { -1 }
+    \bool_if:NTF \g_@@_hangfrom_bool
+      { \@@_build_box: }
+      { \@@_build_par_aux: }
+    \@@_put_box:
+  }
+\cs_new_protected_nopar:Npn \@@_build_par_aux:
+  {
     \@@_extract_display_hbox:NN \l_@@_body_box \l_@@_bottom_box
     \int_compare:nNnT \l_@@_top_int > \c_zero_int
       { \@@_put_body_box: }
@@ -886,7 +1005,6 @@ Copyright and Licence
           { \@@_build_display_box: }
       }
       { \@@_build_body_box: }
-    \@@_put_box:
   }
 \box_new:N \l_@@_bottom_box
 %    \end{macrocode}
@@ -1454,7 +1572,6 @@ Copyright and Licence
 \cs_new_protected_nopar:Npn \@@_column_move_entire_aux:
   {
     \bool_gset_true:N \g_@@_entire_bool
-    \bool_gset_true:N \g_@@_right_move_bool
     \bool_gset_true:N \g_@@_next_hang_bool
   }
 \cs_new_protected_nopar:Npn \@@_column_move_entire:
@@ -1463,7 +1580,7 @@ Copyright and Licence
       { \box_dp:N \l_@@_window_box }
     \bool_gset_false:N \g_@@_entire_bool
     \dim_gzero:N \g_@@_column_right_ht_dim
-    \dim_gset_eq:NN \g_@@_dp_dim \g_@@_first_dp_dim
+    \dim_gset_eq:NN \g_@@_prevdepth_dim \g_@@_first_dp_dim
     \@@_column_right_move_set:nn
       { \g_@@_stuff_ht_dim }
       { \g_@@_window_ht_dim }
@@ -1528,7 +1645,7 @@ Copyright and Licence
           { \g_@@_column_left_dim }
           { \box_use:N \l_@@_r_box }
       }
-    \dim_gset:Nn \g_@@_dp_dim { \box_dp:N \l_@@_r_box }
+    \dim_gset:Nn \g_@@_prevdepth_dim { \box_dp:N \l_@@_r_box }
     \dim_gset:Nn \g_@@_column_right_ht_dim { \box_ht:N \l_@@_r_box }
     \box_gset_ht:Nn \g_@@_window_box { \box_ht:N \l_@@_l_box }
     \box_gset_dp:Nn \g_@@_window_box { \box_dp:N \l_@@_l_box }
@@ -1543,6 +1660,7 @@ Copyright and Licence
           { \g_@@_column_left_dim }
         \int_gzero:N \g_@@_window_int
       }
+    \bool_gset_false:N \g_@@_next_hang_bool
   }
 \cs_new_protected_nopar:Npn \@@_build_column_strict_auxiii:
   {
@@ -1608,9 +1726,13 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_build_hang:
   {
-    \vbox_set_top:Nn \l_@@_window_box
-      { \vbox_unpack:N \l_@@_body_box }
-    \dim_gset:Nn \g_@@_ht_dim { \box_ht:N \l_@@_window_box }
+    \bool_if:NTF \g_@@_hangfrom_bool
+      { \@@_build_hangfrom: }
+      {
+        \vbox_set_top:Nn \l_@@_window_box
+          { \vbox_unpack:N \l_@@_body_box }
+        \dim_gset:Nn \g_@@_ht_dim { \box_ht:N \l_@@_window_box }
+      }
     \bool_if:NTF \l_@@_attach_equation_bool
       {
         \vbox_set:Nn \l_@@_window_box
@@ -1666,6 +1788,39 @@ Copyright and Licence
 %    \end{macrocode}
 % \end{macro}
 %
+% \begin{macro}{\@@_build_hangfrom:}
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_build_hangfrom:
+  {
+    \dim_compare:nNnTF \g_@@_prevdepth_dim > \c_@@_ignore_depth_dim
+      { \@@_build_hangfrom_aux: }
+      { \dim_gzero:N \g_@@_ht_dim }
+  }
+\cs_new_protected_nopar:Npn \@@_build_hangfrom_aux:
+  {
+    \group_begin:
+      \skip_zero:N \tex_splittopskip:D
+      \vbox_gset:Nn \g_@@_line_box
+        {
+          \tex_penalty:D \c_@@_break_int
+          \vbox_unpack:N \l_@@_body_box
+        }
+      \vbox_set_split_to_ht:NNn \l_@@_tmp_box \g_@@_line_box
+        { \c_zero_dim }
+      \dim_gset:Nn \g_@@_ht_dim
+        {
+            \g_@@_baseline_skip
+          - \g_@@_prevdepth_dim
+          - \l_@@_shift_dim
+          - \box_ht:N \l_@@_body_box
+          + \box_ht:N \g_@@_line_box
+        }
+    \group_end:
+    \box_set_eq_drop:NN \l_@@_body_box \g_@@_line_box
+  }
+%    \end{macrocode}
+% \end{macro}
+%
 % \begin{macro}{\@@_put_box:}
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_put_box:
@@ -1677,10 +1832,7 @@ Copyright and Licence
     \skip_set_eq:NN \l_@@_par_skip \tex_parskip:D
     \skip_zero:N \tex_parskip:D
     \bool_if:NTF \g_@@_right_move_bool
-      {
-        \@@_put_box_auxi:
-        \dim_gset_eq:NN \g_@@_prevdepth_dim \g_@@_dp_dim
-      }
+      { \@@_put_box_auxi: }
       {
         \dim_set:Nn \l_@@_shift_dim
           {
@@ -1697,7 +1849,6 @@ Copyright and Licence
       }
   }
 \dim_const:Nn \c_@@_ignore_depth_dim { -1000pt }
-\dim_new:N \l_@@_shift_dim
 \skip_new:N \l_@@_par_skip
 \cs_new_protected_nopar:Npn \@@_put_box_auxi:
   {
@@ -1713,10 +1864,7 @@ Copyright and Licence
       {
         \@@_add_pos_skip:
         \bool_if:NT \g_@@_next_hang_bool
-          {
-            \@@_next_hang_para:
-            \bool_gset_false:N \g_@@_next_hang_bool
-          }
+          { \@@_next_hang_para: }
       }
       {
         \@@_newline:
@@ -1738,10 +1886,12 @@ Copyright and Licence
     \bool_if:NF \g_@@_first_set_bool
       { \box_gclear:N \g_@@_stuff_box }
   }
-\cs_new_protected_nopar:Npn \@@_hbox:n
+\cs_new_protected:Npn \@@_hbox:n #1
   {
     \para_raw_noindent:
-    \hbox:n
+    \hbox_gset:Nn \g_@@_stuff_box {#1}
+    \box_gset_wd:Nn \g_@@_stuff_box { \l_@@_line_dim }
+    \box_use_drop:N \g_@@_stuff_box
   }
 \cs_new_protected_nopar:Npn \@@_put_box_auxii:
   {
@@ -1783,7 +1933,7 @@ Copyright and Licence
   {
     \hbox_gset:Nn \g_@@_stuff_box
       {
-        \@@_list_kern:
+        \@@_parshape_kern:
         \use:c { box_move_ #1 :nn }
           {#2}
           { \box_use_drop:N \g_@@_stuff_box }
@@ -1813,23 +1963,14 @@ Copyright and Licence
   {
     \skip_gset:Nn \g_@@_pre_skip
       {
-          \tex_baselineskip:D
+          \g_@@_baseline_skip
         - \g_@@_prevdepth_dim
         - \g_@@_ht_dim
       }
     \dim_compare:nNnT \g_@@_pre_skip < \tex_lineskiplimit:D
       { \skip_gset_eq:NN \g_@@_pre_skip \tex_lineskip:D }
     \bool_if:NTF \l_@@_first_move_bool
-      {
-        \skip_vertical:n
-          {
-              \g_@@_first_sep_dim
-            - \g_@@_window_ht_dim
-            - \tex_parskip:D
-            \dim_compare:nNnT \g_@@_column_right_ht_dim > \c_zero_dim
-              { + \g_@@_column_right_ht_dim + \g_@@_pre_skip }
-          }
-      }
+      { \@@_first_move_skip: }
       { \skip_vertical:N \g_@@_pre_skip }
     \dim_set_eq:NN \tex_prevdepth:D \c_@@_ignore_depth_dim
   }
@@ -1843,6 +1984,17 @@ Copyright and Licence
         \skip_vertical:n { \g_@@_pre_skip - \tex_topskip:D }
       }
       { \skip_gzero:N \g_@@_pre_skip }
+  }
+\cs_new_protected_nopar:Npn \@@_first_move_skip:
+  {
+    \skip_vertical:n
+      {
+          \g_@@_first_sep_dim
+        - \g_@@_window_ht_dim
+        - \tex_parskip:D
+        \dim_compare:nNnT \g_@@_column_right_ht_dim > \c_zero_dim
+          { + \g_@@_column_right_ht_dim + \g_@@_pre_skip }
+      }
   }
 \skip_new:N \g_@@_pre_skip
 %    \end{macrocode}
@@ -1976,6 +2128,9 @@ Copyright and Licence
       {
         \hbox_set:Nn #1
           {
+            \skip_if_eq:nnF
+              { \g_@@_main_left_skip } { \c_zero_skip }
+              { \skip_horizontal:N \g_@@_main_left_skip }
             \hbox_unpack_drop:N \g_@@_last_box
             \tex_unskip:D \tex_unskip:D \tex_unpenalty:D
           }
