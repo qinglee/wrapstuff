@@ -9,6 +9,8 @@ wrapstuff
 =========
 
 The `wrapstuff` package provides another implementation of text wrapping.
+Its implementation benefits from the paragraph hooks available since
+LaTeX 2021-06-01.
 
 Basic Usage
 -----------
@@ -23,7 +25,7 @@ You can read the package manual (in Chinese) for some explanations.
 
 Contributing
 ------------
-
+The package is still highly experimental and not fully tested.
 [Issues](https://github.com/qinglee/wrapstuff/issues) and
 [pull requests](https://github.com/qinglee/wrapstuff/pulls)
 are always welcome.
@@ -159,7 +161,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{2470}
+% \CheckSum{2504}
 % \GetFileId{wrapstuff.sty}
 %
 % \changes{v0}{2022/07/05}{初始版本。}
@@ -210,12 +212,33 @@ Copyright and Licence
 %   初始值是 \num{0}。
 % \end{function}
 %
-% \begin{function}{line}
+% \begin{function}{lines}
 %   \begin{syntax}
-%     line = <正整数>
+%     lines = <正整数>
 %   \end{syntax}
 %   设置绕排内容占据正文的行数，可以设置正整数。
 %   初始值为空，根据绕排内容的高度自动计算行数。
+% \end{function}
+%
+% \begin{function}{width}
+%   \begin{syntax}
+%     width = <宽度>
+%   \end{syntax}
+%   设置绕排内容的宽度，初始值为 \qty{0}{pt}，代表自然宽度。
+% \end{function}
+%
+% \begin{function}{height}
+%   \begin{syntax}
+%     height = <高度>
+%   \end{syntax}
+%   设置绕排内容的高度，初始值为 \qty{0}{pt}，代表自然高度。
+% \end{function}
+%
+% \begin{function}{voffset}
+%   \begin{syntax}
+%     voffset = <长度>
+%   \end{syntax}
+%   用于调整绕排内容的竖直位置，初始值为 \qty{0}{pt}。
 % \end{function}
 %
 % \begin{function}{leftsep,rightsep,hsep}
@@ -255,6 +278,8 @@ Copyright and Licence
 %   \end{syntax}
 %   控制是否将绕排内容两侧的正文分栏显示，只有设置 |c| 选项或者
 %   设置 \opt{ratio} 不等于 $0$ 或者 $1$ 时才有效。
+%   \opt{false} 表示不分栏，正文文字方向始终保持从左到右的顺序；
+%   \opt{par} 表示以段落为单位进行分栏，如下示例。
 %   \begin{SideBySideExample}[xrightmargin=\dimeval{20em+5mm}]
 %     \begin{wrapstuff}[c,top=1]
 %       \IMAGE{2em}{a}
@@ -269,27 +294,6 @@ Copyright and Licence
 %     \end{wrapstuff}
 %     \QIANZIWEN
 %   \end{SideBySideExample}
-% \end{function}
-%
-% \begin{function}{width}
-%   \begin{syntax}
-%     width = <宽度>
-%   \end{syntax}
-%   设置绕排内容的宽度，初始值为 \qty{0}{pt}，代表自然宽度。
-% \end{function}
-%
-% \begin{function}{height}
-%   \begin{syntax}
-%     height = <高度>
-%   \end{syntax}
-%   设置绕排内容的高度，初始值为 \qty{0}{pt}，代表自然高度。
-% \end{function}
-%
-% \begin{function}{voffset}
-%   \begin{syntax}
-%     voffset = <长度>
-%   \end{syntax}
-%   用于调整绕排内容的竖直位置，初始值为 \qty{0}{pt}。
 % \end{function}
 %
 % \begin{function}{type}
@@ -653,7 +657,7 @@ Copyright and Licence
         \int_set_eq:NN \l_@@_window_int \g_@@_window_int
         \int_zero:N \l_@@_top_int
       }
-      { \@@_set_line: }
+      { \@@_set_lines: }
     \bool_if:NTF \l_@@_hang_bool
       {
         \dim_set_eq:NN \l_@@_display_dim \l_@@_window_dim
@@ -678,10 +682,11 @@ Copyright and Licence
       \@@_tex_parameter:
       \@@_restore_parshape:
       \@@_display_parameter:
+      \@@_make_main_parshape:
       \para_raw_noindent:
   }
   {
-      \@@_save_parshape:
+      \@@_save_hangfrom:
       \@@_save_tex_skip:
       \@@_group_kludge:
       \@@_tex_parameter:
@@ -753,14 +758,14 @@ Copyright and Licence
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\@@_set_line:, \@@_window_init:}
+% \begin{macro}{\@@_set_lines:, \@@_window_init:}
 %    \begin{macrocode}
-\cs_new_protected_nopar:Npn \@@_set_line:
+\cs_new_protected_nopar:Npn \@@_set_lines:
   {
-    \tl_set:Nx \l_@@_line_tl { \l_@@_line_tl }
+    \tl_set:Nx \l_@@_lines_tl { \l_@@_lines_tl }
     \int_set:Nn \l_@@_window_int
       {
-        \tl_if_empty:NTF \l_@@_line_tl
+        \tl_if_empty:NTF \l_@@_lines_tl
           {
             \@@_unit:n
               {
@@ -768,7 +773,7 @@ Copyright and Licence
                 + \l_@@_min_dim
               }
           }
-          { \l_@@_line_tl }
+          { \l_@@_lines_tl }
       }
     \bool_if:NF \g_@@_fake_stuff_bool
       { \@@_window_init: }
@@ -803,17 +808,13 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_make_main_parshape:
   {
-    \int_compare:nNnTF \g_@@_parshape_int = \c_one_int
-      { \@@_make_main_parshape_aux: }
+    \dim_compare:nNnTF \g_@@_hangindent_dim > \c_zero_dim
       {
-        \dim_compare:nNnTF \g_@@_hangindent_dim > \c_zero_dim
-          {
-            \int_compare:nNnTF \g_@@_hangafter_int = \c_one_int
-              { \@@_make_hangfrom: }
-              { \@@_make_main_parshape_aux: }
-          }
+        \int_compare:nNnTF \g_@@_hangafter_int = \c_one_int
+          { \@@_make_hangfrom: }
           { \@@_make_main_parshape_aux: }
       }
+      { \@@_make_main_parshape_aux: }
   }
 \cs_new_protected_nopar:Npn \@@_make_main_parshape_aux:
   {
@@ -869,8 +870,14 @@ Copyright and Licence
 \cs_new_protected_nopar:Npn \@@_make_hangfrom_aux:
   {
     \@@_restore_hangfrom:
+    \int_zero:N \tex_parshape:D
     \bool_gset_true:N \g_@@_hangfrom_bool
     \dim_set_eq:NN \tex_hsize:D \l_@@_window_dim
+  }
+\cs_new_protected_nopar:Npn \@@_save_hangfrom:
+  {
+    \int_gset_eq:NN \g_@@_hangafter_int  \tex_hangafter:D
+    \dim_gset_eq:NN \g_@@_hangindent_dim \tex_hangindent:D
   }
 \cs_new_protected_nopar:Npn \@@_restore_hangfrom:
   {
@@ -1872,6 +1879,11 @@ Copyright and Licence
     \box_if_empty:NTF \l_@@_bottom_box
       {
         \@@_add_pos_skip:
+        \box_if_empty:NF \g_@@_pos_box
+          {
+            \@@_newline:
+            \hbox_unpack_drop:N \g_@@_pos_box
+          }
         \bool_if:NT \g_@@_next_hang_bool
           { \@@_next_hang_para: }
       }
@@ -1880,6 +1892,8 @@ Copyright and Licence
         \hbox_unpack_drop:N \l_@@_bottom_box
         \box_if_empty:NF \g_@@_equation_box
           { \@@_insert_equation: }
+        \box_if_empty:NF \g_@@_pos_box
+          { \hbox_unpack_drop:N \g_@@_pos_box }
         \bool_gset_false:N \g_@@_right_move_bool
         \bool_gset_false:N \g_@@_first_save_bool
       }
@@ -1920,7 +1934,9 @@ Copyright and Licence
           \l_@@_voffset_dim
         + ( \box_dp:N \g_@@_stuff_box -
             \box_dp:N \l_@@_window_box )
-        + ( \l_@@_shift_dim - \g_@@_pos_skip ) / 2
+        + \l_@@_shift_dim / 2
+        \box_if_empty:NT \l_@@_bottom_box
+          { - \g_@@_pos_skip / 2 }
       }
     \@@_output_stuff_box:
   }
@@ -2071,7 +2087,13 @@ Copyright and Licence
       { \box_dp:N \l_@@_window_box }
     \@@_add_pos_skip:
     \int_gzero:N \g_@@_top_int
-    \@@_next_para:
+    \box_if_empty:NTF \g_@@_pos_box
+      { \@@_next_para: }
+      {
+        \@@_env_begin:
+          \hbox_unpack_drop:N \g_@@_pos_box
+        \@@_env_end:
+      }
   }
 \cs_new_protected:Npn \@@_set_next_auxii:n #1
   {
@@ -2113,6 +2135,7 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_extract_display_hbox:NN #1
   {
+    \box_gclear:N \g_@@_pos_box
     \vbox_set:Nn #1
       {
         \vbox_unpack_drop:N #1
@@ -2162,6 +2185,11 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_test_display_math:
   {
+    \int_compare:nNnT \tex_lastnodetype:D = \c_@@_hlist_node
+      {
+        \box_gset_to_last:N \g_@@_pos_box
+        \tex_unskip:D
+      }
     \box_clear:N \l_@@_add_box
     \box_gclear:N \g_@@_display_box
     \@@_add_last_skip:w
@@ -2173,6 +2201,7 @@ Copyright and Licence
     \@@_add_last_finalise:w \q_stop
   }
 \box_new:N \l_@@_add_box
+\box_new:N \g_@@_pos_box
 %    \end{macrocode}
 % \end{macro}
 %
@@ -2387,7 +2416,7 @@ Copyright and Licence
     leftsep    .tl_set:N = \l_@@_leftsep_tl ,
     rightsep   .tl_set:N = \l_@@_rightsep_tl ,
     linewidth  .tl_set:N = \l_@@_linewidth_tl ,
-    line       .tl_set:N = \l_@@_line_tl ,
+    lines      .tl_set:N = \l_@@_lines_tl ,
     width      .tl_set:N = \l_@@_width_tl ,
     height     .tl_set:N = \l_@@_height_tl ,
     voffset    .tl_set:N = \l_@@_voffset_tl ,
