@@ -143,6 +143,18 @@ Copyright and Licence
     寒来暑往秋收冬藏闰馀成岁律召调阳 \par
     云腾致雨露结为霜金生丽水玉出昆冈 \par
   }
+\DeclareDocumentCommand \ADDSPECEIALKEY { m }
+  {
+    \cs_gset_eq:NN \@@_codedoc_names_typeset_save:
+                   \__codedoc_names_typeset:
+    \cs_gset_protected:Npn \__codedoc_names_typeset:
+      {
+        \cs_gset_eq:NN \__codedoc_names_typeset:
+                       \@@_codedoc_names_typeset_save:
+        \__codedoc_names_typeset:
+        #1 \\
+      }
+  }
 \DeclareDocumentCommand \IMAGE { m m }
   { \includegraphics [ width = \dim_eval:n {#1} ] { example-image-#2.pdf } }
 \tl_put_left:Nn \Example
@@ -161,7 +173,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{2504}
+% \CheckSum{2537}
 % \GetFileId{wrapstuff.sty}
 %
 % \changes{v0}{2022/07/05}{初始版本。}
@@ -204,20 +216,14 @@ Copyright and Licence
 %   选项将在下面描述。
 % \end{function}
 %
+% \ADDSPECEIALKEY{\textrm{\meta{n}}}
 % \begin{function}{top}
 %   \begin{syntax}
 %     top = <非负整数>
 %   \end{syntax}
 %   设置在正文段落的第几行之后开始绕排，可以设置为非负整数。
+%   非负整数选项 \meta{n} 是设置选项 \opt{top} 为 \meta{n} 的缩写形式。
 %   初始值是 \num{0}。
-% \end{function}
-%
-% \begin{function}{lines}
-%   \begin{syntax}
-%     lines = <正整数>
-%   \end{syntax}
-%   设置绕排内容占据正文的行数，可以设置正整数。
-%   初始值为空，根据绕排内容的高度自动计算行数。
 % \end{function}
 %
 % \begin{function}{width}
@@ -232,13 +238,6 @@ Copyright and Licence
 %     height = <高度>
 %   \end{syntax}
 %   设置绕排内容的高度，初始值为 \qty{0}{pt}，代表自然高度。
-% \end{function}
-%
-% \begin{function}{voffset}
-%   \begin{syntax}
-%     voffset = <长度>
-%   \end{syntax}
-%   用于调整绕排内容的竖直位置，初始值为 \qty{0}{pt}。
 % \end{function}
 %
 % \begin{function}{leftsep,rightsep,hsep}
@@ -281,19 +280,26 @@ Copyright and Licence
 %   \opt{false} 表示不分栏，正文文字方向始终保持从左到右的顺序；
 %   \opt{par} 表示以段落为单位进行分栏，如下示例。
 %   \begin{SideBySideExample}[xrightmargin=\dimeval{20em+5mm}]
-%     \begin{wrapstuff}[c,top=1]
+%     \begin{wrapstuff}[c,1]
 %       \IMAGE{2em}{a}
 %     \end{wrapstuff}
 %     \QIANZIWEN
-%     \begin{wrapstuff}[c,top=1,column=par]
+%     \begin{wrapstuff}[c,1,column=par]
 %       \IMAGE{2em}{b}
 %     \end{wrapstuff}
 %     \QIANZIWEN
-%     \begin{wrapstuff}[c,top=0,column=false]
+%     \begin{wrapstuff}[c,0,column=false]
 %       \IMAGE{2em}{c}
 %     \end{wrapstuff}
 %     \QIANZIWEN
 %   \end{SideBySideExample}
+% \end{function}
+%
+% \begin{function}{voffset}
+%   \begin{syntax}
+%     voffset = <长度>
+%   \end{syntax}
+%   用于调整绕排内容的竖直位置，初始值为 \qty{0}{pt}。
 % \end{function}
 %
 % \begin{function}{type}
@@ -312,6 +318,14 @@ Copyright and Licence
 %     \end{wrapstuff}
 %     \QIANZIWEN
 %   \end{SideBySideExample}
+% \end{function}
+%
+% \begin{function}{lines}
+%   \begin{syntax}
+%     lines = <正整数>
+%   \end{syntax}
+%   设置绕排内容占据正文的行数，可以设置正整数。
+%   初始值为空，根据绕排内容的高度自动计算行数。
 % \end{function}
 %
 % \begin{function}{linewidth}
@@ -383,6 +397,7 @@ Copyright and Licence
 \NewDocumentEnvironment { wrapstuff } { O { } }
   {
     \@@_para_clear:
+    \int_set:Nn \l_@@_top_int { -1 }
     \tl_if_blank:nTF {#1}
       { \tl_clear:N \l_@@_main_kv_tl }
       {
@@ -417,6 +432,7 @@ Copyright and Licence
     \tl_if_empty:NTF \l_@@_main_kv_tl
       { \tl_gclear:N \g_@@_main_setting_tl }
       { \@@_save_main_setting: }
+    \@@_set_top_line:
     \@@_next_para:
   }
 \hook_gput_code:nnn { env/wrapstuff/before }
@@ -560,6 +576,22 @@ Copyright and Licence
       { \l_@@_main_kv_tl } \l_@@_main_kv_tl
     \tl_gconcat:NNN \g_@@_main_setting_tl
       \g_@@_main_setting_tl \l_@@_main_kv_tl
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_set_top_line:}
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_set_top_line:
+  {
+    \int_compare:nNnF \l_@@_top_int < \c_zero_int
+      {
+        \tl_gput_right:Nx \g_@@_main_setting_tl
+          {
+            \int_set:Nn \l_@@_top_int
+              { \int_use:N \l_@@_top_int }
+          }
+      }
   }
 %    \end{macrocode}
 % \end{macro}
@@ -2451,14 +2483,16 @@ Copyright and Licence
         \tl_set:Nn \l_@@_abovesep_tl {#1}
         \tl_set_eq:NN \l_@@_belowsep_tl \l_@@_abovesep_tl
       } ,
+    unknown      .code:n =
+      { \exp_args:No \@@_unknown_key:n { \l_keys_key_str } } ,
     leftsep    .groups:n = main ,
     rightsep   .groups:n = main ,
     hsep       .groups:n = main ,
     linewidth  .groups:n = main ,
     line       .groups:n = main ,
-    top        .groups:n = main ,
     column     .groups:n = main ,
     voffset    .groups:n = main ,
+    top        .groups:n = stuff ,
     abovesep   .groups:n = stuff ,
     belowsep   .groups:n = stuff ,
     vsep       .groups:n = stuff ,
@@ -2507,6 +2541,19 @@ Copyright and Licence
     \bool_set_false:N \l_@@_swap_bool
     \fp_set_eq:NN \l_@@_ratio_fp
   }
+\cs_new_protected:Npn \@@_unknown_key:n #1
+  {
+    \regex_match:NnTF \c_@@_integer_regex {#1}
+      { \int_set:Nn \l_@@_top_int }
+      { \@@_unknown_key_error:n }
+      {#1}
+  }
+\cs_new_protected:Npn \@@_unknown_key_error:n #1
+  {
+    \msg_error:nnxx { keys } { unknown }
+      { \l_keys_path_str } { wrapstuff }
+  }
+\regex_const:Nn \c_@@_integer_regex { \A \d+ \Z }
 \fp_const:Nn \c_@@_c_fp { 0.5 }
 %    \end{macrocode}
 % \end{macro}
