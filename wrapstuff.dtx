@@ -173,7 +173,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{2546}
+% \CheckSum{2594}
 % \GetFileId{wrapstuff.sty}
 %
 % \changes{v0}{2022/07/05}{初始版本。}
@@ -294,6 +294,17 @@ Copyright and Licence
 %     \end{wrapstuff}
 %     \QIANZIWEN
 %   \end{SideBySideExample}
+% \end{function}
+%
+% \begin{function}{hoffset}
+%   \begin{syntax}
+%     hoffset = <长度>
+%   \end{syntax}
+%   设置绕排内容伸出正文版心的长度。
+%   当设置了选项 \opt{c} 或者选项 \opt{ratio} 的值位于 $(0,1)$ 时，本选项无效。
+%   一个特殊值 \tn{width} 用于表示绕排内容和相应间距的总宽度，
+%   可以将 \opt{hoffset} 设置为 \tn{width}，完全伸出版心。
+%   初始值为 \qty{0}{pt}。
 % \end{function}
 %
 % \begin{function}{voffset}
@@ -638,6 +649,7 @@ Copyright and Licence
     \@@_para_clear:
     \dim_gzero:N \g_@@_fake_wd_dim
     \dim_gzero:N \g_@@_column_left_dim
+    \bool_gset_false:N \g_@@_hoffset_bool
     \bool_gset_false:N \g_@@_next_hang_bool
     \bool_gset_false:N \g_@@_fake_stuff_bool
     \bool_gset_false:N \g_@@_first_save_bool
@@ -781,6 +793,8 @@ Copyright and Licence
 \cs_new_protected_nopar:Npn \@@_set_hang_left:
   {
     \bool_set_true:N \l_@@_hang_bool
+    \bool_if:NF \g_@@_hoffset_bool
+      { \@@_set_hoffset:NN \l_@@_rightsep_dim \use:nn }
     \dim_sub:Nn \l_@@_window_dim { \l_@@_rightsep_dim }
     \dim_zero:N \l_@@_l_dim
     \dim_set_eq:NN \l_@@_r_dim \l_@@_window_dim
@@ -789,6 +803,8 @@ Copyright and Licence
 \cs_new_protected_nopar:Npn \@@_set_hang_right:
   {
     \bool_set_true:N \l_@@_hang_bool
+    \bool_if:NF \g_@@_hoffset_bool
+      { \@@_set_hoffset:NN \l_@@_leftsep_dim \use_ii_i:nn }
     \dim_sub:Nn \l_@@_window_dim { \l_@@_leftsep_dim }
     \dim_zero:N \l_@@_r_dim
     \dim_set_eq:NN \l_@@_l_dim \l_@@_window_dim
@@ -807,6 +823,28 @@ Copyright and Licence
       { \cs_set_eq:NN \@@_build_box: \@@_build_column: }
       { \cs_set_eq:NN \@@_build_box: \@@_build_block: }
   }
+\cs_new_protected:Npn \@@_set_hoffset:NN #1#2
+  {
+    \bool_gset_true:N \g_@@_hoffset_bool
+    \dim_set:Nn \l_@@_hoffset_width_dim
+      { #1 + \box_wd:N \g_@@_stuff_box }
+    \group_begin:
+      \cs_set_eq:NN \width \l_@@_hoffset_width_dim
+      \dim_gset:Nn \g_@@_hoffset_dim { \l_@@_hoffset_tl }
+    \group_end:
+    \int_compare:nNnF \g_@@_hoffset_dim = \c_zero_dim
+      {
+        \hbox_gset:Nn \g_@@_stuff_box
+          {
+            #2 { \tex_kern:D - \g_@@_hoffset_dim }
+               { \box_use_drop:N \g_@@_stuff_box }
+          }
+        \dim_add:Nn \l_@@_window_dim { \g_@@_hoffset_dim }
+      }
+  }
+\dim_new:N \g_@@_hoffset_dim
+\dim_new:N \l_@@_hoffset_width_dim
+\bool_new:N \g_@@_hoffset_bool
 %    \end{macrocode}
 % \end{macro}
 %
@@ -2461,6 +2499,7 @@ Copyright and Licence
     lines      .tl_set:N = \l_@@_lines_tl ,
     width      .tl_set:N = \l_@@_width_tl ,
     height     .tl_set:N = \l_@@_height_tl ,
+    hoffset    .tl_set:N = \l_@@_hoffset_tl ,
     voffset    .tl_set:N = \l_@@_voffset_tl ,
     type       .tl_set:N = \l_@@_type_tl ,
     ratio      .fp_set:N = \l_@@_ratio_fp ,
@@ -2501,6 +2540,7 @@ Copyright and Licence
     linewidth  .groups:n = main ,
     lines      .groups:n = main ,
     column     .groups:n = main ,
+    hoffset    .groups:n = main ,
     voffset    .groups:n = main ,
     top        .groups:n = stuff ,
     abovesep   .groups:n = stuff ,
@@ -2522,6 +2562,7 @@ Copyright and Licence
     leftsep   .initial:n = 1em ,
     rightsep  .initial:n = 1em ,
     linewidth .initial:n = \linewidth ,
+    hoffset   .initial:n = \c_zero_dim ,
     voffset   .initial:n = \c_zero_dim ,
     width     .initial:n = \c_zero_dim ,
     height    .initial:n = \c_zero_dim ,
@@ -2533,6 +2574,7 @@ Copyright and Licence
     linewidth .value_required:n = true ,
     width     .value_required:n = true ,
     height    .value_required:n = true ,
+    hoffset   .value_required:n = true ,
     voffset   .value_required:n = true ,
     hsep      .value_required:n = true ,
     vsep      .value_required:n = true ,
