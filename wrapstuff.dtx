@@ -173,7 +173,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{2815}
+% \CheckSum{2819}
 % \GetFileId{wrapstuff.sty}
 %
 % \changes{v0}{2022/07/05}{初始版本。}
@@ -1223,9 +1223,9 @@ Copyright and Licence
           { \l_@@_display_dim }
           {
             \tex_hss:D
-            \box_use:N \g_@@_equation_box
-            \@@_test_eqnum:
-            \bool_if:NF \g_@@_eqnum_bool { \tex_hss:D }
+              \@@_adjust_equation:
+              \box_use_drop:N \g_@@_equation_box
+            \tex_hss:D
           }
       }
     \dim_gset:Nn \g_@@_ht_dim { \box_ht:N \l_@@_window_box }
@@ -1337,51 +1337,47 @@ Copyright and Licence
   }
 \cs_new_protected_nopar:Npn \@@_test_eqnum:
   {
-    \bool_gset_false:N \g_@@_eqnum_bool
     \hbox_set:Nn \l_@@_tmp_box
       {
+        \bool_gset_false:N \g_@@_eqnum_bool
         \hbox_unpack:N \g_@@_equation_box
-        \int_compare:nNnT \tex_lastnodetype:D = \c_@@_hlist_node
-          {
-            \box_gset_to_last:N \g_@@_eqnum_box
-            \int_compare:nNnT \tex_lastnodetype:D = \c_@@_kern_node
-              {
-                \tex_unkern:D
-                \int_compare:nNnT \tex_lastnodetype:D = \c_@@_hlist_node
-                  {
-                    \box_gset_to_last:N \g_@@_eqbody_box
-                    \int_compare:nNnT \tex_lastnodetype:D = \c_@@_none_node
-                      { \bool_gset_true:N \g_@@_eqnum_bool }
-                  }
-              }
-          }
-      }
-    \bool_lazy_and:nnT
-      { \g_@@_eqnum_bool }
-      { \g_@@_leqno_bool }
-      {
-        \box_set_eq_drop:NN \l_@@_tmp_box \g_@@_eqnum_box
-        \box_gset_eq_drop:NN \g_@@_eqnum_box \g_@@_eqbody_box
-        \box_gset_eq_drop:NN \g_@@_eqbody_box \l_@@_tmp_box
+        \int_compare:nNnF \tex_lastnodetype:D = \c_@@_hlist_node
+          { \use_none_delimit_by_q_stop:w }
+        \box_gset_to_last:N \g_@@_eqnum_box
+        \int_compare:nNnF \tex_lastnodetype:D = \c_@@_kern_node
+          { \use_none_delimit_by_q_stop:w }
+        \tex_unkern:D
+        \int_compare:nNnF \tex_lastnodetype:D = \c_@@_hlist_node
+          { \use_none_delimit_by_q_stop:w }
+        \box_gset_to_last:N \g_@@_eqbody_box
+        \int_compare:nNnF \tex_lastnodetype:D = \c_@@_none_node
+          { \use_none_delimit_by_q_stop:w }
+        \bool_gset_true:N \g_@@_eqnum_bool
+        \use_none_delimit_by_q_stop:w \q_stop
       }
   }
 \cs_new_protected_nopar:Npn \@@_adjust_equation_width:
   {
     \bool_if:NTF \g_@@_leqno_bool
-      {
-        \hbox_gset:Nn \g_@@_equation_box
-          {
-            \skip_horizontal:n
-              {
-                  \box_wd:N \g_@@_eqbody_box
-                - \box_wd:N \g_@@_equation_box
-              }
-            \box_use_drop:N \g_@@_equation_box
-          }
-      }
+      { \@@_adjust_leqno: }
       {
         \box_gset_wd:Nn \g_@@_equation_box
           { \box_wd:N \g_@@_eqbody_box }
+      }
+  }
+\cs_new_protected_nopar:Npn \@@_adjust_leqno:
+  {
+    \box_set_eq_drop:NN \l_@@_tmp_box \g_@@_eqnum_box
+    \box_gset_eq_drop:NN \g_@@_eqnum_box \g_@@_eqbody_box
+    \box_gset_eq_drop:NN \g_@@_eqbody_box \l_@@_tmp_box
+    \hbox_gset:Nn \g_@@_equation_box
+      {
+        \skip_horizontal:n
+          {
+              \box_wd:N \g_@@_eqbody_box
+            - \box_wd:N \g_@@_equation_box
+          }
+        \box_use_drop:N \g_@@_equation_box
       }
   }
 \box_new:N \l_@@_tmp_box
