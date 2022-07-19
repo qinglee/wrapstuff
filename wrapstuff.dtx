@@ -173,7 +173,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{2811}
+% \CheckSum{2815}
 % \GetFileId{wrapstuff.sty}
 %
 % \changes{v0}{2022/07/05}{初始版本。}
@@ -345,6 +345,11 @@ Copyright and Licence
 %     linewidth = <宽度>
 %   \end{syntax}
 %   设置正文段落的行宽，初始设置为 |\linewidth|，一般不需要调整。
+% \end{function}
+%
+% \begin{function}{\wrapstuffclear}
+%   如果当前正文段落的行数不够，\pkg{wrapstuff} 的作用会延续到下一段。
+%   这可能会导致某些意外结果，可以在下一段之前启用命令 \tn{wrapstuffclear} 消除影响。
 % \end{function}
 %
 % \end{documentation}
@@ -2820,6 +2825,17 @@ Copyright and Licence
 %    \begin{macrocode}
 \NewDocumentCommand \wrapstuffset { m }
   { \keys_set:nn { wrapstuff } {#1} }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\wrapstuffclear}
+% 保险起见，加入 \tn{par} 结束段落，同时结束 \env{wrapstuff@par} 环境。
+%    \begin{macrocode}
+\NewDocumentCommand \wrapstuffclear { }
+  {
+    \par
+    \@@_clear:
+  }
 %    \end{macrocode}
 % \end{macro}
 %
