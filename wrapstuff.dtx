@@ -173,7 +173,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{2819}
+% \CheckSum{2856}
 % \GetFileId{wrapstuff.sty}
 %
 % \changes{v0}{2022/07/05}{初始版本。}
@@ -653,15 +653,46 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_clear:
   {
-    \@@_para_clear:
+    \@@_clear_para_hook:
+    \@@_clear_kludge:
+    \@@_clear_variable:
+  }
+\cs_new_protected_nopar:Npn \@@_clear_variable:
+  {
+    \int_gset:Nn \g_@@_top_int { -1 }
+    \int_gzero:N \g_@@_window_int
     \dim_gzero:N \g_@@_fake_wd_dim
     \dim_gzero:N \g_@@_column_left_dim
+    \tl_gclear:N \g_@@_main_setting_tl
     \bool_gset_false:N \g_@@_hoffset_bool
     \bool_gset_false:N \g_@@_next_hang_bool
     \bool_gset_false:N \g_@@_fake_stuff_bool
     \bool_gset_false:N \g_@@_first_save_bool
     \bool_gset_false:N \g_@@_right_move_bool
     \bool_gset_false:N \g_@@_column_right_bool
+  }
+\cs_new_protected_nopar:Npn \@@_clear_kludge:
+  {
+    \bool_if:NTF \g_@@_fake_stuff_bool
+      {
+        \box_gclear:N \g_@@_stuff_box
+        \skip_vertical:n
+          { \tex_baselineskip:D * \g_@@_window_int }
+      }
+      {
+        \box_if_empty:NF \g_@@_stuff_box
+          { \@@_clear_stuff_box: }
+      }
+  }
+\cs_new_protected_nopar:Npn \@@_clear_stuff_box:
+  {
+    \@@_ignore_depth:
+    \skip_set:Nn \l_@@_last_skip
+      { \box_dp:N \strutbox }
+    \skip_vertical:N \l_@@_last_skip
+    \box_use_drop:N \g_@@_stuff_box
+    \skip_vertical:N \l_@@_last_skip
+    \@@_ignore_depth:
   }
 %    \end{macrocode}
 % \end{macro}
@@ -686,7 +717,7 @@ Copyright and Licence
   { \begin { wrapstuff@par } }
 \cs_new_protected_nopar:Npn \@@_env_end:
   { \end { wrapstuff@par } }
-\cs_new_protected_nopar:Npn \@@_para_clear:
+\cs_new_protected_nopar:Npn \@@_clear_para_hook:
   {
     \cs_gset_eq:NN \@@_para_before: \@@_empty:
     \cs_gset_eq:NN \@@_para_begin:  \@@_empty:
@@ -2037,7 +2068,6 @@ Copyright and Licence
           { \@@_put_box_auxi: }
       }
   }
-\dim_const:Nn \c_@@_ignore_depth_dim { -1000pt }
 \skip_new:N \l_@@_par_skip
 \cs_new_protected_nopar:Npn \@@_put_box_auxi:
   {
@@ -2162,7 +2192,7 @@ Copyright and Licence
 \cs_new_protected_nopar:Npn \@@_add_vskip_display:
   {
     \vbox_unpack_drop:N \g_@@_display_box
-    \dim_set_eq:NN \tex_prevdepth:D \c_@@_ignore_depth_dim
+    \@@_ignore_depth:
   }
 \cs_new_protected_nopar:Npn \@@_add_vskip_auxi:
   {
@@ -2183,7 +2213,7 @@ Copyright and Licence
     \bool_if:NTF \l_@@_first_move_bool
       { \@@_first_move_skip: }
       { \skip_vertical:N \g_@@_pre_skip }
-    \dim_set_eq:NN \tex_prevdepth:D \c_@@_ignore_depth_dim
+    \@@_ignore_depth:
   }
 \cs_new_protected_nopar:Npn \@@_add_vskip_auxiii:
   {
@@ -2207,6 +2237,9 @@ Copyright and Licence
           { + \g_@@_column_right_ht_dim + \g_@@_pre_skip }
       }
   }
+\cs_new_protected_nopar:Npn \@@_ignore_depth:
+  { \dim_set_eq:NN \tex_prevdepth:D \c_@@_ignore_depth_dim }
+\dim_const:Nn \c_@@_ignore_depth_dim { -1000pt }
 \skip_new:N \g_@@_pre_skip
 %    \end{macrocode}
 % \end{macro}
