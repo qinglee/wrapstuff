@@ -173,7 +173,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{2966}
+% \CheckSum{2942}
 % \GetFileId{wrapstuff.sty}
 %
 % \changes{v0}{2022/07/05}{初始版本。}
@@ -403,14 +403,42 @@ Copyright and Licence
 \prop_gput:Nnn \g_msg_module_name_prop { wstf } { wrapstuff }
 %    \end{macrocode}
 %
+% \begin{macro}[TF]{
+%   \@@_if_last_none:,
+%   \@@_if_last_hlist:,
+%   \@@_if_last_whatsit:,
+%   \@@_if_last_glue:,
+%   \@@_if_last_kern:,
+%   \@@_if_last_penalty:}
+% 一些 \hologo{eTeX} 结点判定函数。
 %    \begin{macrocode}
-\int_const:Nn \c_@@_none_node    { -1 }
-\int_const:Nn \c_@@_hlist_node   {  1 }
-\int_const:Nn \c_@@_whatsit_node {  9 }
-\int_const:Nn \c_@@_glue_node    { 11 }
-\int_const:Nn \c_@@_kern_node    { 12 }
-\int_const:Nn \c_@@_penalty_node { 13 }
+\group_begin:
+\cs_set:Npn \@@_tmp:nn #1
+  {
+    \group_begin:
+      \exp_args:Ncc \@@_tmp_aux:NNn
+        { @@_if_last_ #1 : }
+        { c_@@_ #1 _node }
+  }
+\cs_set:Npn \@@_tmp_aux:NNn #1#2#3
+  {
+    \group_end:
+    \int_const:Nn #2 {#3}
+    \prg_new_conditional:Npnn #1 { T , F , TF }
+      {
+        \if_int_compare:w \tex_lastnodetype:D = #2
+          \prg_return_true: \else: \prg_return_false: \fi:
+      }
+  }
+\@@_tmp:nn { none }    { -1 }
+\@@_tmp:nn { hlist }   {  1 }
+\@@_tmp:nn { whatsit } {  9 }
+\@@_tmp:nn { glue }    { 11 }
+\@@_tmp:nn { kern }    { 12 }
+\@@_tmp:nn { penalty } { 13 }
+\group_end:
 %    \end{macrocode}
+% \end{macro}
 %
 % \begin{macro}{\@@_gadd_hook:nn, \@@_package_hook:nn}
 %    \begin{macrocode}
@@ -520,7 +548,6 @@ Copyright and Licence
 \dim_new:N \l_@@_width_dim
 \dim_new:N \l_@@_height_dim
 \dim_new:N \g_@@_prevdepth_dim
-\bool_new:N \g_@@_fake_stuff_bool
 %    \end{macrocode}
 % \end{macro}
 %
@@ -664,20 +691,19 @@ Copyright and Licence
   {
     \int_gset:Nn \g_@@_top_int { -1 }
     \int_gzero:N \g_@@_window_int
-    \dim_gzero:N \g_@@_fake_wd_dim
     \dim_gzero:N \g_@@_total_ht_dim
     \dim_gzero:N \g_@@_column_left_dim
     \tl_gclear:N \g_@@_main_setting_tl
+    \bool_gset_false:N \g_@@_next_bool
     \bool_gset_false:N \g_@@_hoffset_bool
     \bool_gset_false:N \g_@@_next_hang_bool
-    \bool_gset_false:N \g_@@_fake_stuff_bool
     \bool_gset_false:N \g_@@_first_save_bool
     \bool_gset_false:N \g_@@_right_move_bool
     \bool_gset_false:N \g_@@_column_right_bool
   }
 \cs_new_protected_nopar:Npn \@@_clear_kludge:
   {
-    \bool_if:NTF \g_@@_fake_stuff_bool
+    \bool_if:NTF \g_@@_next_bool
       {
         \box_gclear:N \g_@@_stuff_box
         \skip_vertical:n
@@ -894,7 +920,7 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_set_lines:
   {
-    \bool_if:NTF \g_@@_fake_stuff_bool
+    \bool_if:NTF \g_@@_next_bool
       { \tl_clear:N \l_@@_lines_tl }
       { \tl_set:Nx \l_@@_lines_tl { \l_@@_lines_tl } }
     \int_set:Nn \l_@@_window_int
@@ -909,7 +935,7 @@ Copyright and Licence
           }
           { \l_@@_lines_tl }
       }
-    \bool_if:NF \g_@@_fake_stuff_bool
+    \bool_if:NF \g_@@_next_bool
       { \@@_window_init: }
     \int_compare:nNnTF \g_@@_top_int < \c_zero_int
       {
@@ -1390,17 +1416,13 @@ Copyright and Licence
       {
         \bool_gset_false:N \g_@@_eqnum_bool
         \hbox_unpack:N \g_@@_equation_box
-        \int_compare:nNnF \tex_lastnodetype:D = \c_@@_hlist_node
-          { \use_none_delimit_by_q_stop:w }
+        \@@_if_last_hlist:F { \use_none_delimit_by_q_stop:w }
         \box_gset_to_last:N \g_@@_eqnum_box
-        \int_compare:nNnF \tex_lastnodetype:D = \c_@@_kern_node
-          { \use_none_delimit_by_q_stop:w }
+        \@@_if_last_kern:F  { \use_none_delimit_by_q_stop:w }
         \tex_unkern:D
-        \int_compare:nNnF \tex_lastnodetype:D = \c_@@_hlist_node
-          { \use_none_delimit_by_q_stop:w }
+        \@@_if_last_hlist:F { \use_none_delimit_by_q_stop:w }
         \box_gset_to_last:N \g_@@_eqbody_box
-        \int_compare:nNnF \tex_lastnodetype:D = \c_@@_none_node
-          { \use_none_delimit_by_q_stop:w }
+        \@@_if_last_none:F  { \use_none_delimit_by_q_stop:w }
         \bool_gset_true:N \g_@@_eqnum_bool
         \use_none_delimit_by_q_stop:w \q_stop
       }
@@ -1834,12 +1856,9 @@ Copyright and Licence
         \fp_zero:N \l_@@_ratio_fp
       }
     \dim_gset:Nn \g_@@_remaining_dim {#1}
-    \bool_gset_true:N \g_@@_fake_stuff_bool
-    \dim_gset:Nn \g_@@_fake_wd_dim
+    \@@_make_fake_stuff:nn
       { \l_@@_line_dim - \l_@@_r_dim - \l_@@_rightsep_dim }
-    \box_gset_eq:NN \g_@@_stuff_box \l_@@_empty_box
-    \box_gset_wd:Nn \g_@@_stuff_box { \g_@@_fake_wd_dim }
-    \box_gset_ht:Nn \g_@@_stuff_box { \g_@@_remaining_dim }
+      { \g_@@_remaining_dim }
     \dim_gset:Nn \g_@@_column_left_dim {#2}
     \int_gzero:N \g_@@_top_int
   }
@@ -2127,7 +2146,7 @@ Copyright and Licence
     \@@_hbox:n
       {
         \@@_put_window_box:
-        \bool_if:NTF \g_@@_fake_stuff_bool
+        \bool_if:NTF \g_@@_next_bool
           { \@@_clear_fake_box: }
           { \@@_put_stuff_box: }
       }
@@ -2319,15 +2338,15 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_set_next:
   {
-    \dim_set:Nn \l_@@_total_ht_dim
+    \dim_set:Nn \l_@@_height_dim
       {
           \g_@@_pre_skip
         + \g_@@_pos_skip
         + \box_ht_plus_dp:N \l_@@_window_box
       }
-    \dim_gadd:Nn \g_@@_total_ht_dim { \l_@@_total_ht_dim }
+    \dim_gadd:Nn \g_@@_total_ht_dim { \l_@@_height_dim }
     \dim_set:Nn \l_@@_shift_dim
-      { \g_@@_remaining_dim - \l_@@_total_ht_dim }
+      { \g_@@_remaining_dim - \l_@@_height_dim }
     \dim_compare:nNnTF \l_@@_shift_dim > \c_zero_dim
       { \@@_set_next_auxi: }
       {
@@ -2337,13 +2356,11 @@ Copyright and Licence
           { \@@_set_next_auxi: }
       }
   }
-\dim_new:N \l_@@_total_ht_dim
 \dim_new:N \g_@@_total_ht_dim
 \cs_new_protected_nopar:Npn \@@_set_next_auxi:
   {
     \dim_gset_eq:NN \g_@@_remaining_dim \l_@@_shift_dim
-    \dim_gset:Nn \g_@@_fake_wd_dim
-      { \box_wd:N \g_@@_stuff_box }
+    \dim_set:Nn \l_@@_width_dim { \box_wd:N \g_@@_stuff_box }
     \int_gset:Nn \g_@@_window_int
       {
         \dim_compare:nNnTF \l_@@_shift_dim > \c_zero_dim
@@ -2351,15 +2368,12 @@ Copyright and Licence
           { \c_one_int }
       }
     \@@_set_next_verify:
-    \bool_if:NF \g_@@_fake_stuff_bool
+    \bool_if:NF \g_@@_next_bool
       { \@@_move_next_stuff_box: }
     \@@_set_next_output:
-    \bool_gset_true:N \g_@@_fake_stuff_bool
-    \box_gset_eq:NN \g_@@_stuff_box \l_@@_empty_box
-    \box_gset_wd:Nn \g_@@_stuff_box { \g_@@_fake_wd_dim }
-    \box_gset_ht:Nn \g_@@_stuff_box { \g_@@_remaining_dim }
-    \dim_gset:Nn \g_@@_prevdepth_dim
-      { \box_dp:N \l_@@_window_box }
+    \@@_make_fake_stuff:nn
+      { \l_@@_width_dim }
+      { \g_@@_remaining_dim }
     \int_gzero:N \g_@@_top_int
     \@@_next_para_trailer:
   }
@@ -2380,7 +2394,7 @@ Copyright and Licence
 \cs_new_protected_nopar:Npn \@@_set_next_auxii:
   {
     \int_gzero:N \g_@@_window_int
-    \bool_if:NTF \g_@@_fake_stuff_bool
+    \bool_if:NTF \g_@@_next_bool
       { \@@_clear_fake_box: }
       {
         \@@_move_stuff_box:nn { down }
@@ -2398,23 +2412,21 @@ Copyright and Licence
     \@@_hbox:n
       {
         \@@_put_window_box:
-        \bool_if:NF \g_@@_fake_stuff_bool
+        \bool_if:NF \g_@@_next_bool
           { \@@_output_stuff_box: }
       }
   }
 \cs_new_protected_nopar:Npn \@@_set_next_verify:
   {
-    \group_begin:
-      \dim_set:Nn \l_@@_shift_dim
-        { \g_@@_window_ht_dim - \g_@@_total_ht_dim }
-      \dim_until_do:nNnn
-        { \tex_baselineskip:D * \g_@@_window_int + \l_@@_par_skip }
-        >
-        { \l_@@_shift_dim }
-        { \int_gincr:N \g_@@_window_int }
-      \dim_gadd:Nn \g_@@_total_ht_dim
-        { \tex_baselineskip:D * \g_@@_window_int + \l_@@_par_skip }
-    \group_end:
+    \dim_set:Nn \l_@@_height_dim
+      { \g_@@_window_ht_dim - \g_@@_total_ht_dim }
+    \dim_until_do:nNnn
+      { \tex_baselineskip:D * \g_@@_window_int + \l_@@_par_skip }
+      >
+      { \l_@@_height_dim }
+      { \int_gincr:N \g_@@_window_int }
+    \dim_gadd:Nn \g_@@_total_ht_dim
+      { \tex_baselineskip:D * \g_@@_window_int + \l_@@_par_skip }
   }
 %    \end{macrocode}
 % \end{macro}
@@ -2432,6 +2444,19 @@ Copyright and Licence
         \@@_env_end:
       }
   }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_make_fake_stuff:nn}
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_make_fake_stuff:nn #1#2
+  {
+    \bool_gset_true:N \g_@@_next_bool
+    \box_gset_eq:NN \g_@@_stuff_box \l_@@_empty_box
+    \box_gset_wd:Nn \g_@@_stuff_box {#1}
+    \box_gset_ht:Nn \g_@@_stuff_box {#2}
+  }
+\bool_new:N \g_@@_next_bool
 %    \end{macrocode}
 % \end{macro}
 %
@@ -2485,7 +2510,7 @@ Copyright and Licence
   }
 \cs_new_protected:Npn \@@_extract_last_hbox:N #1
   {
-    \int_compare:nNnTF \tex_lastnodetype:D = \c_@@_hlist_node
+    \@@_if_last_hlist:TF
       {
         \box_gset_to_last:N #1
         \tex_unskip:D
@@ -2502,7 +2527,7 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_test_display_math:
   {
-    \int_compare:nNnT \tex_lastnodetype:D = \c_@@_hlist_node
+    \@@_if_last_hlist:T
       {
         \box_gset_to_last:N \g_@@_pos_box
         \tex_unskip:D
@@ -2539,7 +2564,7 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_add_last_skip:w
   {
-    \int_compare:nNnTF \tex_lastnodetype:D = \c_@@_glue_node
+    \@@_if_last_glue:TF
       {
         \skip_set_eq:NN \l_@@_last_skip \tex_lastskip:D
         \vbox_set:Nn \l_@@_add_box
@@ -2562,7 +2587,7 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_add_last_penalty:w
   {
-    \int_compare:nNnTF \tex_lastnodetype:D = \c_@@_penalty_node
+    \@@_if_last_penalty:TF
       {
         \int_set_eq:NN \l_@@_last_int \tex_lastpenalty:D
         \vbox_set:Nn \l_@@_add_box
@@ -2585,7 +2610,7 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_add_last_box:w
   {
-    \int_compare:nNnTF \tex_lastnodetype:D = \c_@@_hlist_node
+    \@@_if_last_hlist:TF
       {
         \skip_gzero:N \g_@@_last_skip
         \box_set_to_last:N \l_@@_last_box
