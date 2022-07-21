@@ -1,7 +1,7 @@
 
 module = "wrapstuff"
 
-packtdszip = true
+packtdszip = false
 tdsroot    = "latex"
 
 supportdir  =  "./support"
