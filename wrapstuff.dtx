@@ -173,7 +173,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{2923}
+% \CheckSum{3019}
 %
 % \changes{v0.1}{2022/07/05}{初始版本。}
 % \changes{v0.1}{2022/07/20}{首次提交到 CTAN 发布。}
@@ -405,6 +405,247 @@ Copyright and Licence
 \prop_gput:Nnn \g_msg_module_name_prop { wstf } { wrapstuff }
 %    \end{macrocode}
 %
+% \begin{macro}[var]{
+%   \c_@@_global_tl_tl,
+%   \c_@@_global_dim_tl,
+%   \c_@@_global_int_tl,
+%   \c_@@_global_bool_tl}
+% 一些需要全局设置的变量。
+%    \begin{macrocode}
+\tl_const:Nn \c_@@_global_tl_tl
+  { \g_@@_main_setting_tl }
+\tl_const:Nn \c_@@_global_dim_tl
+  {
+    \g_@@_hang_ht_dim
+    \g_@@_total_ht_dim
+    \g_@@_stuff_ht_dim
+    \g_@@_stuff_wd_dim
+    \g_@@_first_dp_dim
+    \g_@@_first_sep_dim
+    \g_@@_prevdepth_dim
+    \g_@@_window_ht_dim
+    \g_@@_remaining_dim
+    \g_@@_column_left_dim
+    \g_@@_column_right_ht_dim
+    \g_@@_parshape_indent_dim
+    \g_@@_parshape_length_dim
+  }
+\tl_const:Nn \c_@@_global_int_tl
+  {
+    \g_@@_top_int
+    \g_@@_window_int
+    \g_@@_column_window_int
+  }
+\tl_const:Nn \c_@@_global_bool_tl
+  {
+    \g_@@_next_bool
+    \g_@@_entire_bool
+    \g_@@_display_bool
+    \g_@@_hoffset_bool
+    \g_@@_next_hang_bool
+    \g_@@_first_set_bool
+    \g_@@_move_hang_bool
+    \g_@@_first_save_bool
+    \g_@@_right_move_bool
+    \g_@@_column_right_bool
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{
+%   \@@_tl_init:N,
+%   \@@_dim_init:N,
+%   \@@_int_init:N,
+%   \@@_bool_init:N}
+% 全局变量的初始化，注意保存好清除和恢复的设置。
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_tl_init:N #1
+  {
+    \tl_new:N #1
+    \tl_gput_right:Nn \g_@@_var_clear_tl
+      { \tl_gclear:N #1 }
+    \tl_gput_right:Nn \g_@@_var_push_tl
+      { \tl_gset:Nn \exp_not:N #1 { \exp_not:o {#1} } }
+  }
+\cs_new_protected:Npn \@@_dim_init:N #1
+  {
+    \dim_new:N #1
+    \tl_gput_right:Nn \g_@@_var_clear_tl
+      { \dim_gzero:N #1 }
+    \tl_gput_right:Nn \g_@@_var_push_tl
+      { \dim_gset:Nn #1 { \dim_use:N #1 } }
+  }
+\cs_new_protected:Npn \@@_int_init:N #1
+  {
+    \int_new:N #1
+    \tl_gput_right:Nn \g_@@_var_clear_tl
+      { \int_gzero:N #1 }
+    \tl_gput_right:Nn \g_@@_var_push_tl
+      { \int_gset:Nn #1 { \int_use:N #1 } }
+  }
+\cs_new_protected:Npn \@@_bool_init:N #1
+  {
+    \bool_new:N #1
+    \tl_gput_right:Nn \g_@@_var_clear_tl
+      { \bool_gset_false:N #1 }
+    \tl_gput_right:Nn \g_@@_var_push_tl
+      {
+        \bool_if:NTF #1
+          { \bool_gset_true:N  #1 }
+          { \bool_gset_false:N #1 }
+      }
+  }
+\tl_new:N \g_@@_var_clear_tl
+\tl_new:N \g_@@_var_push_tl
+\tl_map_function:NN \c_@@_global_tl_tl   \@@_tl_init:N
+\tl_map_function:NN \c_@@_global_dim_tl  \@@_dim_init:N
+\tl_map_function:NN \c_@@_global_int_tl  \@@_int_init:N
+\tl_map_function:NN \c_@@_global_bool_tl \@@_bool_init:N
+%    \end{macrocode}
+% \cs{g_@@_top_int} 的初始值是 $-1$。
+%    \begin{macrocode}
+\int_gdecr:N \g_@@_top_int
+\tl_gput_right:Nn \g_@@_var_clear_tl
+  { \int_gdecr:N \g_@@_top_int }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{
+%   \@@_clear:,
+%   \@@_clear_variable:,
+%   \@@_clear_kludge:,
+%   \@@_clear_stuff_box:}
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_clear:
+  {
+    \@@_clear_para_hook:
+    \@@_clear_kludge:
+    \@@_clear_variable:
+  }
+\cs_new_protected_nopar:Npn \@@_clear_variable:
+  {
+    \tl_use:N \g_@@_var_clear_tl
+    \box_gclear:N \g_@@_stuff_box
+  }
+\cs_new_protected_nopar:Npn \@@_clear_kludge:
+  {
+    \bool_if:NTF \g_@@_next_bool
+      {
+        \skip_vertical:n
+          { \tex_baselineskip:D * \g_@@_window_int }
+      }
+      {
+        \box_if_empty:NF \g_@@_stuff_box
+          { \@@_clear_stuff_box: }
+      }
+  }
+\cs_new_protected_nopar:Npn \@@_clear_stuff_box:
+  {
+    \@@_ignore_depth:
+    \skip_set:Nn \l_@@_last_skip
+      { \box_dp:N \strutbox }
+    \skip_vertical:N \l_@@_last_skip
+    \box_use_drop:N \g_@@_stuff_box
+    \skip_vertical:N \l_@@_last_skip
+    \@@_ignore_depth:
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{
+%   \@@_status_push:,
+%   \@@_status_pop:,
+%   \@@_status_restore:}
+% 全局变量的保存与恢复。
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_status_push:
+  {
+    \tl_clear:N \l_@@_status_tl
+    \int_gincr:N \g_@@_status_int
+    \exp_args:Ne \@@_status_push_aux:n
+      { \int_use:N \g_@@_status_int }
+    \seq_gpush:No \g_@@_status_seq { \l_@@_status_tl }
+  }
+\cs_new_protected:Npn \@@_status_push_aux:n #1
+  {
+    \@@_push_cs:nN {#1} \@@_para_before:
+    \@@_push_cs:nN {#1} \@@_para_begin:
+    \@@_push_cs:nN {#1} \@@_para_end:
+    \@@_push_box:nN {#1} \g_@@_stuff_box
+    \@@_push_var:
+  }
+\cs_new_protected:Npn \@@_push_cs:nN #1#2
+  {
+    \exp_args:NNc \@@_push_cs_aux:NN #2
+      { @@_ #1 _ \token_to_str:N #2 }
+  }
+\cs_new_protected:Npn \@@_push_cs_aux:NN #1#2
+  {
+    \cs_gset_eq:NN #2#1
+    \tl_put_right:Nn \l_@@_status_tl
+      {
+        \cs_gset_eq:NN #1#2
+        \cs_undefine:N #2
+      }
+  }
+\cs_new_protected:Npn \@@_push_box:nN #1#2
+  {
+    \exp_args:NNc \@@_push_box_aux:NN #2
+      { g_@@_ #1 _ \token_to_str:N #2 }
+  }
+\cs_new_protected:Npn \@@_push_box_aux:NN #1#2
+  {
+    \box_clear_new:N #2
+    \box_gset_eq:NN #2#1
+    \tl_put_right:Nn \l_@@_status_tl
+      { \box_gset_eq_drop:NN #1#2 }
+  }
+\cs_new_protected_nopar:Npn \@@_push_var:
+  {
+    \tl_put_right:Nx \l_@@_status_tl
+      { \g_@@_var_push_tl }
+  }
+\cs_new_protected_nopar:Npn \@@_status_pop:
+  {
+    \seq_gpop:NNT \g_@@_status_seq \l_@@_status_tl
+      {
+        \int_gdecr:N \g_@@_status_int
+        \tl_use:N \l_@@_status_tl
+      }
+  }
+\cs_new_protected_nopar:Npn \@@_status_restore:
+  {
+    \@@_status_push:
+    \@@_clear_para_hook:
+    \@@_clear_variable:
+    \group_insert_after:N \@@_status_pop:
+  }
+\tl_new:N \l_@@_status_tl
+\int_new:N \g_@@_status_int
+\seq_new:N \g_@@_status_seq
+%    \end{macrocode}
+% \end{macro}
+%
+% \changes{v0.2}{2022/07/21}{兼容 \tn{parbox} 与 \env{minipage} 等使用环境。}
+%
+% \begin{macro}{\wrapstuff@parboxrestore,\@arrayparboxrestore}
+% 在 \LaTeX\ 的 \cs{parbox} 和 \env{minipage} 等环境中恢复正常的段落状态。
+% \tn{wrapstuff@parboxrestore} 的初始值是空值，
+% 只有在 \env{wrapstuff@par} 环境内部才等于 \cs{@@_status_restore:}。
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \wrapstuff@parboxrestore
+  { }
+\cs_new_protected_nopar:Npn \@@_parbox_restore:
+  {
+    \cs_set_eq:NN
+      \wrapstuff@parboxrestore
+      \@@_status_restore:
+  }
+\g@addto@macro \@arrayparboxrestore
+  { \wrapstuff@parboxrestore }
+%    \end{macrocode}
+% \end{macro}
+%
 % \begin{macro}[TF]{
 %   \@@_if_last_none:,
 %   \@@_if_last_hlist:,
@@ -448,6 +689,13 @@ Copyright and Licence
   { \hook_gput_code:nnn {#1} { wrapstuff } }
 \cs_new_protected:Npn \@@_package_hook:nn #1
   { \hook_gput_code:nnn { package/#1/after } { wrapstuff } }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_gadd_ht:Nn}
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_gadd_ht:Nn #1#2
+  { \box_gset_ht:Nn #1 { \box_ht:N #1 + \dim_eval:n {#2} } }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -551,15 +799,10 @@ Copyright and Licence
     \box_gset_dp:Nn \g_@@_stuff_box { \c_zero_dim }
   }
 \tl_new:N \l_@@_main_kv_tl
-\tl_new:N \g_@@_main_setting_tl
 \box_new:N \g_@@_stuff_box
-\dim_new:N \g_@@_stuff_ht_dim
-\dim_new:N \g_@@_stuff_wd_dim
 \dim_new:N \l_@@_shift_dim
 \dim_new:N \l_@@_width_dim
 \dim_new:N \l_@@_height_dim
-\dim_new:N \g_@@_prevdepth_dim
-\dim_new:N \g_@@_remaining_dim
 %    \end{macrocode}
 % \end{macro}
 %
@@ -636,8 +879,10 @@ Copyright and Licence
     \keys_precompile:nnN
       { wrapstuff }
       { \l_@@_main_kv_tl } \l_@@_main_kv_tl
-    \tl_gconcat:NNN \g_@@_main_setting_tl
-      \g_@@_main_setting_tl \l_@@_main_kv_tl
+    \tl_gconcat:NNN
+      \g_@@_main_setting_tl
+      \g_@@_main_setting_tl
+      \l_@@_main_kv_tl
   }
 %    \end{macrocode}
 % \end{macro}
@@ -679,63 +924,6 @@ Copyright and Licence
 \bool_new:N \l_@@_swap_bool
 \bool_new:N \l_@@_inner_bool
 \bool_new:N \l_@@_outer_bool
-%    \end{macrocode}
-% \end{macro}
-%
-% \begin{macro}{\@@_gadd_ht:Nn,\@@_gsub_ht:Nn}
-%    \begin{macrocode}
-\cs_new_protected:Npn \@@_gadd_ht:Nn #1#2
-  { \box_gset_ht:Nn #1 { \box_ht:N #1 + \dim_eval:n {#2} } }
-\cs_new_protected:Npn \@@_gsub_ht:Nn #1#2
-  { \box_gset_ht:Nn #1 { \box_ht:N #1 - \dim_eval:n {#2} } }
-%    \end{macrocode}
-% \end{macro}
-%
-% \begin{macro}{\@@_clear:}
-%    \begin{macrocode}
-\cs_new_protected_nopar:Npn \@@_clear:
-  {
-    \@@_clear_para_hook:
-    \@@_clear_kludge:
-    \@@_clear_variable:
-  }
-\cs_new_protected_nopar:Npn \@@_clear_variable:
-  {
-    \int_gset:Nn \g_@@_top_int { -1 }
-    \int_gzero:N \g_@@_window_int
-    \dim_gzero:N \g_@@_total_ht_dim
-    \dim_gzero:N \g_@@_column_left_dim
-    \tl_gclear:N \g_@@_main_setting_tl
-    \bool_gset_false:N \g_@@_next_bool
-    \bool_gset_false:N \g_@@_hoffset_bool
-    \bool_gset_false:N \g_@@_next_hang_bool
-    \bool_gset_false:N \g_@@_first_save_bool
-    \bool_gset_false:N \g_@@_right_move_bool
-    \bool_gset_false:N \g_@@_column_right_bool
-  }
-\cs_new_protected_nopar:Npn \@@_clear_kludge:
-  {
-    \bool_if:NTF \g_@@_next_bool
-      {
-        \box_gclear:N \g_@@_stuff_box
-        \skip_vertical:n
-          { \tex_baselineskip:D * \g_@@_window_int }
-      }
-      {
-        \box_if_empty:NF \g_@@_stuff_box
-          { \@@_clear_stuff_box: }
-      }
-  }
-\cs_new_protected_nopar:Npn \@@_clear_stuff_box:
-  {
-    \@@_ignore_depth:
-    \skip_set:Nn \l_@@_last_skip
-      { \box_dp:N \strutbox }
-    \skip_vertical:N \l_@@_last_skip
-    \box_use_drop:N \g_@@_stuff_box
-    \skip_vertical:N \l_@@_last_skip
-    \@@_ignore_depth:
-  }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -820,6 +1008,7 @@ Copyright and Licence
     \cs_gset_eq:NN \@@_para_before: \@@_empty:
     \cs_gset_eq:NN \@@_para_begin:  \@@_empty:
     \@@_save_parshape:
+    \@@_parbox_restore:
     \vbox_set:Nw \l_@@_body_box
       \@@_set_prevdepth:N \g_@@_prevdepth_dim
       \@@_save_tex_skip:
@@ -847,10 +1036,8 @@ Copyright and Licence
 \box_new:N \l_@@_body_box
 \box_new:N \l_@@_window_box
 \int_new:N \l_@@_window_int
-\int_new:N \g_@@_window_int
 \int_new:N \g_@@_line_int
 \int_new:N \l_@@_window_line_int
-\int_new:N \g_@@_column_window_int
 \dim_new:N \l_@@_l_dim
 \dim_new:N \l_@@_r_dim
 \dim_new:N \l_@@_min_dim
@@ -860,10 +1047,7 @@ Copyright and Licence
 \dim_new:N \l_@@_voffset_dim
 \dim_new:N \l_@@_leftsep_dim
 \dim_new:N \l_@@_rightsep_dim
-\dim_new:N \g_@@_window_ht_dim
 \dim_new:N \l_@@_main_width_dim
-\int_new:N \g_@@_top_int
-\int_gdecr:N \g_@@_top_int
 \bool_new:N \l_@@_hang_bool
 %    \end{macrocode}
 % \end{macro}
@@ -924,7 +1108,6 @@ Copyright and Licence
   }
 \dim_new:N \g_@@_hoffset_dim
 \dim_new:N \l_@@_hoffset_width_dim
-\bool_new:N \g_@@_hoffset_bool
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1011,7 +1194,8 @@ Copyright and Licence
     \int_compare:nNnTF \g_@@_parshape_int = \c_one_int
       {
         \tex_parshape:D \g_@@_parshape_int
-          \g_@@_parshape_indent_dim \g_@@_parshape_length_dim
+          \g_@@_parshape_indent_dim
+          \g_@@_parshape_length_dim
       }
       { \@@_restore_hangfrom: }
   }
@@ -1050,8 +1234,6 @@ Copyright and Licence
 \int_new:N \g_@@_parshape_int
 \int_new:N \g_@@_hangafter_int
 \dim_new:N \g_@@_hangindent_dim
-\dim_new:N \g_@@_parshape_indent_dim
-\dim_new:N \g_@@_parshape_length_dim
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1157,7 +1339,6 @@ Copyright and Licence
       }
   }
 \cs_new_eq:NN \@@_test_leqno: \@@_empty:
-\bool_new:N \g_@@_display_bool
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1993,19 +2174,7 @@ Copyright and Licence
 \box_new:N \l_@@_last_l_box
 \box_new:N \l_@@_last_r_box
 \box_new:N \g_@@_window_box
-\dim_new:N \g_@@_fake_wd_dim
-\dim_new:N \g_@@_first_dp_dim
-\dim_new:N \g_@@_first_sep_dim
-\dim_new:N \g_@@_column_left_dim
-\dim_new:N \g_@@_column_right_ht_dim
-\bool_new:N \g_@@_entire_bool
-\bool_new:N \g_@@_next_hang_bool
-\bool_new:N \g_@@_first_save_bool
-\bool_new:N \g_@@_column_right_bool
-\bool_new:N \l_@@_column_strict_bool
-\bool_new:N \g_@@_first_set_bool
 \bool_new:N \l_@@_first_move_bool
-\bool_new:N \g_@@_right_move_bool
 %    \end{macrocode}
 % \end{macro}
 %
@@ -2069,14 +2238,11 @@ Copyright and Licence
         \dim_gset_eq:NN \g_@@_hang_ht_dim \g_@@_remaining_dim
       }
     \dim_gsub:Nn \g_@@_hang_ht_dim { \l_@@_shift_dim }
-    \dim_gset:Nn \g_@@_dp_dim { \box_dp:N \l_@@_window_box }
     \@@_column_right_move_set:nn
       { \g_@@_hang_ht_dim }
       { \g_@@_column_left_dim }
     \int_gzero:N \g_@@_window_int
   }
-\dim_new:N \g_@@_hang_ht_dim
-\bool_new:N \g_@@_move_hang_bool
 %    \end{macrocode}
 % \end{macro}
 %
@@ -2180,8 +2346,7 @@ Copyright and Licence
       { \@@_insert_equation: }
     \box_if_empty:NF \g_@@_pos_box
       { \hbox_unpack_drop:N \g_@@_pos_box }
-    \bool_gset_false:N \g_@@_right_move_bool
-    \bool_gset_false:N \g_@@_first_save_bool
+    \@@_clear_variable:
   }
 \cs_new_protected_nopar:Npn \@@_newline:
   {
@@ -2274,7 +2439,11 @@ Copyright and Licence
   {
     \dim_compare:nNnTF \tex_pagegoal:D < \c_max_dim
       { \@@_add_vskip_auxii: }
-      { \@@_add_vskip_auxiii: }
+      {
+        \int_compare:nNnTF \l_@@_top_int > \c_zero_int
+          { \@@_add_vskip_auxii: }
+          { \@@_add_vskip_auxiii: }
+      }
   }
 \cs_new_protected_nopar:Npn \@@_add_vskip_auxii:
   {
@@ -2349,7 +2518,6 @@ Copyright and Licence
           { \@@_set_next_auxi: }
       }
   }
-\dim_new:N \g_@@_total_ht_dim
 \cs_new_protected_nopar:Npn \@@_set_next_auxi:
   {
     \int_gset:Nn \g_@@_window_int
@@ -2384,7 +2552,6 @@ Copyright and Licence
   }
 \cs_new_protected_nopar:Npn \@@_set_next_auxii:
   {
-    \int_gzero:N \g_@@_window_int
     \bool_if:NF \g_@@_next_bool
       {
         \@@_move_stuff_box:nn { down }
@@ -2396,6 +2563,7 @@ Copyright and Licence
       }
     \@@_set_next_output:
     \@@_add_pos_skip:
+    \@@_clear_variable:
   }
 \cs_new_protected_nopar:Npn \@@_set_next_output:
   {
@@ -2445,7 +2613,6 @@ Copyright and Licence
     \dim_gset:Nn \g_@@_stuff_wd_dim  {#1}
     \dim_gset:Nn \g_@@_remaining_dim {#2}
   }
-\bool_new:N \g_@@_next_bool
 %    \end{macrocode}
 % \end{macro}
 %
@@ -2963,8 +3130,8 @@ Copyright and Licence
   }
 \regex_const:Nn \c_@@_integer_regex { \A \d+ \Z }
 \cs_new_protected_nopar:Npn \@@_unknown_key_error:n
-  { \msg_error:nnn { wrapstuff } { unknown-key } }
-\msg_new:nnnn { wrapstuff } { unknown-key }
+  { \msg_error:nnn { wstf } { unknown-key } }
+\msg_new:nnnn { wstf } { unknown-key }
   { The~key~'#1'~is~unknown~and~is~being~ignored. }
   {
     The~package~wrapstuff~does~not~have~a~key~called~'#1'.\\
