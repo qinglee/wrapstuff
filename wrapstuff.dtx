@@ -173,7 +173,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{3036}
+% \CheckSum{3069}
 %
 % \changes{v0.1}{2022/07/05}{初始版本。}
 % \changes{v0.1}{2022/07/20}{首次提交到 CTAN 发布。}
@@ -191,6 +191,11 @@ Copyright and Licence
 % \section{基本用法}
 %
 % \pkg{wrapstuff} 宏包提供了图文绕排的另一种实现。
+% \pkg{wrapstuff} 尝试整合和扩展 \pkg{picinpar}、\pkg{floatflt}、\pkg{wrapfig}、
+% \pkg{cutwin} 和 \pkg{wrapfig2} 等同类宏包的功能。
+% 本宏包兼容 \pkg{caption}、\pkg{float} 和 \pkg{floatrow} 等宏包，
+% 并试图兼容显示（display）数学公式和各种 \LaTeX\ 列表环境，可以让他们正确绕排。
+%
 % \pkg{wrapstuff} 的实现依赖 \LaTeX\ 2021-06-01 开始提供的段落钩子，
 % 并依赖 \LaTeXiii\ 2022-04-10 之后的版本。
 %
@@ -243,24 +248,19 @@ Copyright and Licence
 %   设置绕排内容的高度，初始值为 \qty{0}{pt}，代表自然高度。
 % \end{function}
 %
-% \begin{function}{leftsep,rightsep,hsep}
+% \begin{function}{lines}
 %   \begin{syntax}
-%     leftsep  = <长度>
-%     rightsep = <长度>
-%     hsep     = <长度>
+%     lines = <正整数>
 %   \end{syntax}
-%   设置绕排内容与正文的左/右间距，选项 \opt{hsep} 同时设置 \opt{leftsep} 和 \opt{rightsep}。
-%   初始值是 \qty{1}{em}。
+%   设置绕排内容占据正文的行数，可以设置正整数。
+%   初始值为空，根据绕排内容的高度自动计算行数。
 % \end{function}
 %
-% \begin{function}{abovesep,belowsep,vsep}
+% \begin{function}{linewidth}
 %   \begin{syntax}
-%     abovesep = <长度>
-%     belowsep = <长度>
-%     vsep     = <长度>
+%     linewidth = <宽度>
 %   \end{syntax}
-%   设置绕排内容与正文的上/下间距，选项 \opt{vsep} 同时设置 \opt{abovesep} 和 \opt{belowsep}。
-%   初始值是 \qty{0}{pt}。
+%   设置正文段落的行宽，初始设置为 |\linewidth|，一般不需要调整。
 % \end{function}
 %
 % \begin{function}{l,r,c,i,o,ratio}
@@ -299,6 +299,26 @@ Copyright and Licence
 %   \end{SideBySideExample}
 % \end{function}
 %
+% \begin{function}{leftsep,rightsep,hsep}
+%   \begin{syntax}
+%     leftsep  = <长度>
+%     rightsep = <长度>
+%     hsep     = <长度>
+%   \end{syntax}
+%   设置绕排内容与正文的左/右间距，选项 \opt{hsep} 同时设置 \opt{leftsep} 和 \opt{rightsep}。
+%   初始值是 \qty{1}{em}。
+% \end{function}
+%
+% \begin{function}{abovesep,belowsep,vsep}
+%   \begin{syntax}
+%     abovesep = <长度>
+%     belowsep = <长度>
+%     vsep     = <长度>
+%   \end{syntax}
+%   设置绕排内容与正文的上/下间距，选项 \opt{vsep} 同时设置 \opt{abovesep} 和 \opt{belowsep}。
+%   初始值是 \qty{0}{pt}。
+% \end{function}
+%
 % \begin{function}{hoffset}
 %   \begin{syntax}
 %     hoffset = <长度>
@@ -333,21 +353,6 @@ Copyright and Licence
 %     \end{wrapstuff}
 %     \QIANZIWEN
 %   \end{SideBySideExample}
-% \end{function}
-%
-% \begin{function}{lines}
-%   \begin{syntax}
-%     lines = <正整数>
-%   \end{syntax}
-%   设置绕排内容占据正文的行数，可以设置正整数。
-%   初始值为空，根据绕排内容的高度自动计算行数。
-% \end{function}
-%
-% \begin{function}{linewidth}
-%   \begin{syntax}
-%     linewidth = <宽度>
-%   \end{syntax}
-%   设置正文段落的行宽，初始设置为 |\linewidth|，一般不需要调整。
 % \end{function}
 %
 % \begin{function}{\wrapstuffclear}
@@ -1270,16 +1275,15 @@ Copyright and Licence
   { \fp_to_dim:n { #1 \dim_to_fp:n {#2} } }
 \cs_new:Npn \@@_unit:n #1
   {
-    \fp_eval:n
+    \int_eval:n
       {
-        ceil
-          (
-            \dim_to_decimal_in_unit:nn
-              {#1}
-              { \tex_baselineskip:D }
-          )
+        \exp_last_unbraced:Ne \@@_unit_aux:w
+          { \dim_to_decimal_in_unit:nn {#1} { \tex_baselineskip:D } }
+        \q_stop
       }
   }
+\cs_new:Npn \@@_unit_aux:w #1 . #2 \q_stop
+  { #1 + 1 }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1314,6 +1318,7 @@ Copyright and Licence
     \skip_set_eq:NN \tex_leftskip:D \g_@@_left_skip
     \skip_set_eq:NN \tex_rightskip:D \g_@@_right_skip
     \skip_set_eq:NN \tex_parfillskip:D \g_@@_parfill_skip
+    \skip_set_eq:NN \tex_baselineskip:D \g_@@_baseline_skip
   }
 \skip_new:N \g_@@_left_skip
 \skip_new:N \g_@@_right_skip
@@ -1704,9 +1709,6 @@ Copyright and Licence
   {
     \vbox_set:Nn \l_@@_body_box
       {
-        \@@_tex_parameter:
-        \@@_make_parshape:
-        \@@_column_penalties:
         \dim_zero:N \tex_emergencystretch:D
         \dim_set_eq:NN \tex_hfuzz:D \c_max_dim
         \dim_set_eq:NN \tex_vfuzz:D \c_max_dim
@@ -1715,6 +1717,9 @@ Copyright and Licence
         \int_set:Nn \tex_tolerance:D { 1000 }
         \para_raw_noindent:
           \hbox_unpack_drop:N \l_@@_bottom_box
+          \@@_tex_parameter:
+          \@@_make_parshape:
+          \@@_interline_penalties:
         \para_raw_end:
         \int_gset_eq:NN \g_@@_line_int \tex_prevgraf:D
       }
@@ -1762,17 +1767,18 @@ Copyright and Licence
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\@@_column_penalties:}
+% \begin{macro}{\@@_interline_penalties:}
 %    \begin{macrocode}
-\cs_new_protected_nopar:Npn \@@_column_penalties:
+\cs_new_protected_nopar:Npn \@@_interline_penalties:
   {
     \bool_if:NF \l_@@_hang_bool
       {
-        \bool_if:NT \l_@@_column_bool
-          { \@@_column_penalties_aux: }
+        \bool_if:NTF \l_@@_column_bool
+          { \@@_column_penalties: }
+          { \@@_block_penalties: }
       }
   }
-\cs_new_protected_nopar:Npn \@@_column_penalties_aux:
+\cs_new_protected_nopar:Npn \@@_column_penalties:
   {
     \tex_interlinepenalties:D
       \int_eval:n { \l_@@_window_int / 2 + \c_one_int } ~
@@ -1782,20 +1788,30 @@ Copyright and Licence
       \c_@@_break_int
       \c_zero_int
   }
+\cs_new_protected_nopar:Npn \@@_block_penalties:
+  {
+    \tex_interlinepenalties:D \l_@@_window_int
+      \prg_replicate:nn
+        { \l_@@_window_int - \c_one_int }
+        { \c_@@_break_int }
+      \c_zero_int
+  }
 %    \end{macrocode}
 % \end{macro}
+%
+% \changes{v0.2}{2022/07/22}{提高稳定性。}
 %
 % \begin{macro}{\@@_build_box:, \@@_build_block:}
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_build_block:
   {
-    \@@_build_block_auxi:
+    \@@_build_block_aux:
     \vbox_set:Nn \l_@@_window_box
       {
-        \@@_tex_parameter:
-        \dim_set_eq:NN \tex_hsize:D \l_@@_line_dim
         \para_raw_noindent:
           \hbox_unpack_drop:N \g_@@_line_box
+          \@@_tex_parameter:
+          \dim_set_eq:NN \tex_hsize:D \l_@@_line_dim
         \para_raw_end:
       }
     \bool_if:NT \l_@@_attach_equation_bool
@@ -1805,72 +1821,79 @@ Copyright and Licence
         \box_set_dp:Nn \l_@@_window_box { \g_@@_dp_dim }
       }
   }
-\cs_new_protected_nopar:Npn \@@_build_block_auxi:
+\cs_new_protected_nopar:Npn \@@_build_block_aux:
   {
-    \vbox_set:Nn \l_@@_body_box
-      {
-        \vbox_unpack_drop:N \l_@@_body_box
-        \bool_lazy_and:nnTF
-          { \box_if_empty_p:N \l_@@_bottom_box }
-          { \int_if_odd_p:n { \g_@@_line_int } }
-          { \box_set_eq:NN \l_@@_r_box \l_@@_empty_box }
-          {
-            \box_set_to_last:N \l_@@_r_box
-            \tex_unskip:D \tex_unpenalty:D
-          }
-        \box_set_to_last:N \l_@@_l_box
-        \tex_unskip:D \tex_unpenalty:D
-        \hbox_gset:Nn \g_@@_line_box
-          {
-            \bool_if:NT \l_@@_attach_equation_bool
-              { \@@_build_block_attach: }
-            \box_use:N \l_@@_l_box
-            \tex_hfill:D
-            \box_use:N \l_@@_r_box
-          }
-        \@@_build_block_auxii:
-      }
-  }
-\cs_new_protected_nopar:Npn \@@_build_block_auxii:
-  {
-    \int_case:nnTF
-      { \tex_lastnodetype:D }
-      {
-        { \c_@@_none_node }    { }
-        { \c_@@_whatsit_node } { }
-      }
-      { \@@_build_block_finalise: }
-      { \@@_build_block_auxiii: }
-  }
-\cs_new_protected_nopar:Npn \@@_build_block_auxiii:
-  {
-    \box_set_to_last:N \l_@@_r_box
-    \tex_unskip:D \tex_unpenalty:D
-    \box_set_to_last:N \l_@@_l_box
-    \tex_unskip:D \tex_unpenalty:D
     \hbox_gset:Nn \g_@@_line_box
       {
-        \box_use:N \l_@@_l_box
+        \skip_zero:N \tex_splittopskip:D
+        \dim_set_eq:NN \tex_vfuzz:D \c_max_dim
+        \int_set_eq:NN \tex_vbadness:D \c_max_int
+        \dim_set:Nn \l_@@_height_dim { \box_ht:N \strutbox }
+        \@@_build_line:
+      }
+  }
+\cs_new_protected_nopar:Npn \@@_build_line:
+  {
+    \vbox_set_split_to_ht:NNn \l_@@_l_box \l_@@_body_box
+      { \l_@@_height_dim }
+    \vbox_set_split_to_ht:NNn \l_@@_r_box \l_@@_body_box
+      { \l_@@_height_dim }
+    \@@_build_line_repack:
+    \box_if_empty:NTF \l_@@_body_box
+      { \@@_put_last_line: }
+      {
+        \@@_put_line:
+        \@@_build_line:
+      }
+  }
+\cs_new_protected_nopar:Npn \@@_build_line_repack:
+  {
+    \vbox_set:Nn \l_@@_l_box
+      { \vbox_unpack_drop:N \l_@@_l_box }
+    \box_if_empty:NF \l_@@_r_box
+      {
+        \vbox_set:Nn \l_@@_r_box
+          { \vbox_unpack_drop:N \l_@@_r_box }
+      }
+    \@@_save_first_ht:
+  }
+\cs_new_protected_nopar:Npn \@@_put_line:
+  {
+    \box_use:N \l_@@_l_box
+    \tex_hfill:D
+    \box_use:N \l_@@_r_box
+    \tex_penalty:D \c_@@_break_int
+  }
+\cs_new_protected_nopar:Npn \@@_put_last_line:
+  {
+    \bool_if:NTF \l_@@_attach_equation_bool
+      { \@@_build_block_attach: }
+      { \box_use:N \l_@@_l_box }
+    \box_if_empty:NF \l_@@_r_box
+      {
         \tex_hfill:D
         \box_use:N \l_@@_r_box
-        \tex_penalty:D \c_@@_break_int
-        \hbox_unpack_drop:N \g_@@_line_box
       }
-    \@@_build_block_auxii:
   }
 \cs_new_protected_nopar:Npn \@@_build_block_attach:
   {
-    \box_set_eq:NN \l_@@_last_box \l_@@_l_box
-    \@@_attach_equation:N \l_@@_last_box
-    \dim_gset:Nn \g_@@_dp_dim { \box_dp:N \l_@@_last_box }
+    \vbox_set:Nn \l_@@_last_box
+      {
+        \vbox_unpack:N \l_@@_l_box
+        \box_set_to_last:N \l_@@_last_box
+        \@@_attach_equation:N \l_@@_last_box
+        \dim_gset:Nn \g_@@_dp_dim { \box_dp:N \l_@@_last_box }
+        \vbox_unpack:N \l_@@_last_box
+      }
     \hbox_set:Nn \l_@@_l_box
       {
         \box_move_down:nn
           { \box_ht:N \l_@@_last_box - \box_ht:N \l_@@_l_box }
           { \box_use_drop:N \l_@@_last_box }
       }
+    \box_use:N \l_@@_l_box
   }
-\cs_new_protected_nopar:Npn \@@_build_block_finalise:
+\cs_new_protected_nopar:Npn \@@_save_first_ht:
   {
     \dim_gset:Nn \g_@@_ht_dim
       {
@@ -1878,6 +1901,7 @@ Copyright and Licence
           { \box_ht:N \l_@@_l_box }
           { \box_ht:N \l_@@_r_box }
       }
+    \cs_set_eq:NN \@@_save_first_ht: \@@_empty:
   }
 \dim_new:N \g_@@_dp_dim
 \dim_new:N \g_@@_ht_dim
