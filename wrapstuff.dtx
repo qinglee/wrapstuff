@@ -2268,12 +2268,6 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_build_hangfrom:
   {
-    \dim_compare:nNnTF \g_@@_prevdepth_dim > \c_@@_ignore_depth_dim
-      { \@@_build_hangfrom_aux: }
-      { \dim_gzero:N \g_@@_ht_dim }
-  }
-\cs_new_protected_nopar:Npn \@@_build_hangfrom_aux:
-  {
     \group_begin:
       \skip_zero:N \tex_splittopskip:D
       \vbox_gset:Nn \g_@@_window_box
@@ -2303,7 +2297,7 @@ Copyright and Licence
     \para_raw_end:
     \dim_compare:nNnTF \g_@@_prevdepth_dim > \c_@@_ignore_depth_dim
       { \@@_add_vskip: }
-      { \skip_gzero:N \g_@@_pre_skip }
+      { \@@_set_vskip: }
     \skip_set_eq:NN \l_@@_par_skip \tex_parskip:D
     \skip_zero:N \tex_parskip:D
     \dim_set:Nn \l_@@_window_ht_dim
@@ -2458,12 +2452,31 @@ Copyright and Licence
     \dim_compare:nNnTF \tex_pagegoal:D < \c_max_dim
       { \@@_add_vskip_auxii: }
       {
-        \int_compare:nNnTF \l_@@_top_int > \c_zero_int
+        \bool_if:NTF \g_@@_next_bool
           { \@@_add_vskip_auxii: }
           { \@@_add_vskip_auxiii: }
       }
   }
 \cs_new_protected_nopar:Npn \@@_add_vskip_auxii:
+  {
+    \@@_add_vskip_auxiv:
+    \bool_if:NTF \l_@@_first_move_bool
+      { \@@_first_move_skip: }
+      { \skip_vertical:N \g_@@_pre_skip }
+    \@@_ignore_depth:
+  }
+\cs_new_protected_nopar:Npn \@@_add_vskip_auxiii:
+  {
+    \@@_add_vskip_auxiv:
+    \skip_vertical:N \g_@@_pre_skip
+    \dim_compare:nNnTF \tex_topskip:D > \g_@@_ht_dim
+      {
+        \skip_sub:Nn \tex_topskip:D { \g_@@_ht_dim }
+        \tex_hrule:D height \c_zero_dim \scan_stop:
+      }
+      { \@@_ignore_depth: }
+  }
+\cs_new_protected_nopar:Npn \@@_add_vskip_auxiv:
   {
     \skip_gset:Nn \g_@@_pre_skip
       {
@@ -2473,21 +2486,6 @@ Copyright and Licence
       }
     \dim_compare:nNnT \g_@@_pre_skip < \tex_lineskiplimit:D
       { \skip_gset_eq:NN \g_@@_pre_skip \tex_lineskip:D }
-    \bool_if:NTF \l_@@_first_move_bool
-      { \@@_first_move_skip: }
-      { \skip_vertical:N \g_@@_pre_skip }
-    \@@_ignore_depth:
-  }
-\cs_new_protected_nopar:Npn \@@_add_vskip_auxiii:
-  {
-    \dim_compare:nNnTF \tex_topskip:D > \g_@@_ht_dim
-      {
-        \tex_hrule:D height \c_zero_dim \scan_stop:
-        \skip_gset:Nn \g_@@_pre_skip
-          { \tex_topskip:D - \g_@@_ht_dim }
-        \skip_vertical:n { \g_@@_pre_skip - \tex_topskip:D }
-      }
-      { \skip_gzero:N \g_@@_pre_skip }
   }
 \cs_new_protected_nopar:Npn \@@_first_move_skip:
   {
@@ -2502,6 +2500,20 @@ Copyright and Licence
   }
 \skip_new:N \g_@@_pre_skip
 \bool_new:N \l_@@_display_pre_bool
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_set_vskip:}
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_set_vskip:
+  {
+    \box_if_empty:NTF \g_@@_display_box
+      {
+        \skip_gset:Nn \g_@@_pre_skip
+          { \g_@@_baseline_skip - \g_@@_ht_dim }
+      }
+      { \@@_add_vskip_display: }
+  }
 %    \end{macrocode}
 % \end{macro}
 %
