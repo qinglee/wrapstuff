@@ -119,7 +119,7 @@ Copyright and Licence
 %<*internal>
 \fi
 %</internal>
-%<package>\NeedsTeXFormat{LaTeX2e}
+%<package>\NeedsTeXFormat{LaTeX2e}[2021-06-01]
 %<package>\@ifundefined{ExplLoaderFileDate}{\RequirePackage{expl3}}{}
 %<+package>\GetIdInfo$Id$
 %<package>  {Wrapping text around stuff}
@@ -173,7 +173,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{2997}
+% \CheckSum{3014}
 %
 % \changes{v0.1}{2022/07/05}{初始版本。}
 % \changes{v0.1}{2022/07/20}{首次提交到 CTAN 发布。}
@@ -445,11 +445,12 @@ Copyright and Licence
 \tl_const:Nn \c_@@_global_bool_tl
   {
     \g_@@_next_bool
+    \g_@@_leqno_bool
     \g_@@_column_bool
     \g_@@_entire_bool
     \g_@@_display_bool
-    \g_@@_next_hang_bool
     \g_@@_move_hang_bool
+    \g_@@_next_hang_bool
     \g_@@_first_set_bool
     \g_@@_first_save_bool
     \g_@@_right_move_bool
@@ -560,7 +561,8 @@ Copyright and Licence
 % \begin{macro}{
 %   \@@_status_push:,
 %   \@@_status_pop:,
-%   \@@_status_restore:}
+%   \@@_status_restore:,
+%   \@@_status_clear:}
 % 全局变量的保存与恢复。
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_status_push:
@@ -576,7 +578,8 @@ Copyright and Licence
     \@@_push_cs:nN {#1} \@@_para_before:
     \@@_push_cs:nN {#1} \@@_para_begin:
     \@@_push_cs:nN {#1} \@@_para_end:
-    \@@_push_box:nN {#1} \g_@@_stuff_box
+    \@@_push_cs:nN {#1} \@@_display_hook:
+    \@@_push_box:N \g_@@_stuff_box
     \@@_push_var:
   }
 \cs_new_protected:Npn \@@_push_cs:nN #1#2
@@ -593,17 +596,27 @@ Copyright and Licence
         \cs_undefine:N #2
       }
   }
-\cs_new_protected:Npn \@@_push_box:nN #1#2
+\cs_new_protected:Npn \@@_push_box:N #1
   {
-    \exp_args:NNc \@@_push_box_aux:NN #2
-      { g_@@_ #1 _ \token_to_str:N #2 }
-  }
-\cs_new_protected:Npn \@@_push_box_aux:NN #1#2
-  {
-    \box_clear_new:N #2
-    \box_gset_eq:NN #2#1
+    \hbox_gset:Nn \g_@@_stauts_box
+      {
+        \hbox_unpack_drop:N \g_@@_stauts_box
+        \box_use:N #1
+      }
     \tl_put_right:Nn \l_@@_status_tl
-      { \box_gset_eq_drop:NN #1#2 }
+      { \@@_pop_box:N #1 }
+  }
+\cs_new_protected:Npn \@@_pop_box:N #1
+  {
+    \hbox_gset:Nw \g_@@_stauts_box
+      \hbox_unpack_drop:N \g_@@_stauts_box
+      \box_gset_to_last:N #1
+    \@@_if_last_hlist:TF
+      { \hbox_gset_end: }
+      {
+        \hbox_gset_end:
+        \box_gclear:N \g_@@_stauts_box
+      }
   }
 \cs_new_protected_nopar:Npn \@@_push_var:
   {
@@ -622,10 +635,20 @@ Copyright and Licence
   {
     \@@_status_push:
     \@@_clear_para_hook:
+    \@@_clear_display_hook:
     \@@_clear_variable:
     \group_insert_after:N \@@_status_pop:
   }
+\cs_new_protected_nopar:Npn \@@_status_clear:
+  {
+    \bool_if:NT \g_@@_next_bool
+      {
+        \@@_clear_para_hook:
+        \@@_clear_variable:
+      }
+  }
 \tl_new:N \l_@@_status_tl
+\box_new:N \g_@@_stauts_box
 \int_new:N \g_@@_status_int
 \seq_new:N \g_@@_status_seq
 %    \end{macrocode}
@@ -635,11 +658,12 @@ Copyright and Licence
 %
 % \begin{macro}{\wrapstuff@parboxrestore,\@arrayparboxrestore}
 % 在 \LaTeX\ 的 \cs{parbox} 和 \env{minipage} 等环境中恢复正常的段落状态。
-% \tn{wrapstuff@parboxrestore} 的初始值是空值，
-% 只有在 \env{wrapstuff@par} 环境内部才等于 \cs{@@_status_restore:}。
+% \tn{wrapstuff@parboxrestore} 的初始值是在分组后清除活动的段落钩子和相关全局变量，
+% 只有在 \env{wrapstuff@par} 环境内部才等于 \cs{@@_status_restore:}，
+% 保存和恢复相关状态。
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \wrapstuff@parboxrestore
-  { }
+  { \group_insert_after:N \@@_status_clear: }
 \cs_new_protected_nopar:Npn \@@_parbox_restore:
   {
     \cs_set_eq:NN
@@ -1327,15 +1351,32 @@ Copyright and Licence
     \tex_everydisplay:D \exp_after:wN
       {
         \tex_the:D \tex_everydisplay:D
-        \@@_test_leqno:
-        \dim_compare:nNnF \tex_displaywidth:D < \c_max_dim
-          {
-            \bool_gset_true:N \g_@@_display_bool
-            \dim_set_eq:NN \tex_displaywidth:D \l_@@_display_dim
-          }
+        \@@_display_hook:
+      }
+  }
+\cs_new_protected_nopar:Npn \@@_display_hook:
+  {
+    \@@_test_leqno:
+    \dim_compare:nNnF \tex_displaywidth:D < \c_max_dim
+      {
+        \bool_gset_true:N \g_@@_display_bool
+        \dim_set_eq:NN \tex_displaywidth:D \l_@@_display_dim
       }
   }
 \cs_new_eq:NN \@@_test_leqno: \@@_empty:
+\cs_new_protected_nopar:Npn \@@_clear_display_hook:
+  { \cs_gset_eq:NN \@@_display_hook: \@@_empty: }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_split_parameter:}
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_split_parameter:
+  {
+    \skip_zero:N \tex_splittopskip:D
+    \dim_set_eq:NN \tex_vfuzz:D \c_max_dim
+    \int_set_eq:NN \tex_vbadness:D \c_max_int
+  }
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1432,12 +1473,9 @@ Copyright and Licence
 \cs_new_protected_nopar:Npn \@@_build_display_amsmath:
   {
     \group_begin:
-      \skip_zero:N \tex_splittopskip:D
-      \dim_set_eq:NN \tex_vfuzz:D \c_max_dim
-      \int_set_eq:NN \tex_vbadness:D \c_max_int
       \vbox_gset:Nn \g_@@_equation_box
         {
-          \tex_penalty:D \c_@@_break_int
+          \@@_break:
           \vbox_unpack_drop:N \g_@@_display_box
           \skip_gset_eq:NN \g_@@_pos_skip \tex_lastskip:D
           \tex_unskip:D
@@ -1447,6 +1485,7 @@ Copyright and Licence
           \tex_unskip:D
           \tex_unpenalty:D
         }
+      \@@_split_parameter:
       \vbox_set_split_to_ht:NNn \l_@@_last_box \g_@@_equation_box
         { \c_zero_dim }
     \group_end:
@@ -1572,7 +1611,7 @@ Copyright and Licence
   {
     \vbox_gset:Nn \g_@@_equation_box
       {
-        \tex_penalty:D \c_@@_nobreak_int
+        \@@_nobreak:
         \skip_vertical:n
           {
               \g_@@_display_pre_skip
@@ -1603,7 +1642,7 @@ Copyright and Licence
         \skip_add:Nn \l_@@_last_skip { \tex_lastskip:D }
         \vbox_gset:Nn \g_@@_equation_box
           {
-            \tex_penalty:D \c_@@_nobreak_int
+            \@@_nobreak:
             \skip_vertical:N \l_@@_last_skip
             \box_move_right:nn {#2}
               {
@@ -1692,7 +1731,6 @@ Copyright and Licence
 \int_new:N \g_@@_pos_int
 \skip_new:N \g_@@_pos_skip
 \bool_new:N \g_@@_eqnum_bool
-\bool_new:N \g_@@_leqno_bool
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1708,7 +1746,7 @@ Copyright and Licence
           {
             \box_if_empty:NF \g_@@_equation_box
               { \vbox_unpack_drop:N \g_@@_equation_box }
-            \tex_penalty:D \c_@@_nobreak_int
+            \@@_nobreak:
             \bool_if:NT \l_@@_display_bool
               { \skip_vertical:N \g_@@_pos_skip }
           }
@@ -1842,6 +1880,21 @@ Copyright and Licence
         { \c_@@_break_int }
       \c_zero_int
   }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@@_break:,\@@_nobreak:,\@@_newline:}
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_break:
+  { \tex_penalty:D \c_@@_break_int }
+\cs_new_protected_nopar:Npn \@@_nobreak:
+  { \tex_penalty:D \c_@@_nobreak_int }
+\cs_new_protected_nopar:Npn \@@_newline:
+  {
+    \tex_penalty:D \c_@@_nobreak_int
+    \tex_hfil:D
+    \tex_penalty:D \c_@@_break_int
+  }
 \int_const:Nn \c_@@_break_int { -10000 }
 \int_const:Nn \c_@@_nobreak_int { 10000 }
 %    \end{macrocode}
@@ -1855,9 +1908,7 @@ Copyright and Licence
   {
     \vbox_set:Nn \l_@@_window_box
       {
-        \skip_zero:N \tex_splittopskip:D
-        \dim_set_eq:NN \tex_vfuzz:D \c_max_dim
-        \int_set_eq:NN \tex_vbadness:D \c_max_int
+        \@@_split_parameter:
         \skip_set_eq:NN \tex_baselineskip:D \g_@@_baseline_skip
         \@@_build_line:
       }
@@ -1925,9 +1976,7 @@ Copyright and Licence
     \hbox_set_to_wd:Nnn \l_@@_window_box
       { \l_@@_line_dim }
       {
-        \skip_zero:N \tex_splittopskip:D
-        \dim_set_eq:NN \tex_vfuzz:D \c_max_dim
-        \int_set_eq:NN \tex_vbadness:D \c_max_int
+        \@@_split_parameter:
         \@@_build_column_aux:
         \box_if_empty:NT \l_@@_bottom_box
           { \@@_build_column_fuzzy_aux: }
@@ -1970,17 +2019,21 @@ Copyright and Licence
 \cs_new_protected_nopar:Npn \@@_rebuild_window:
   {
     \int_compare:nNnT \l_@@_window_int > { 2 }
-      {
-        \int_sub:Nn \l_@@_window_int { 2 }
-        \box_set_eq_drop:NN \l_@@_last_l_box \l_@@_l_box
-        \box_set_eq_drop:NN \l_@@_last_r_box \l_@@_r_box
-        \box_set_eq:NN \l_@@_bottom_box \l_@@_save_body_box
-        \int_set_eq:NN \l_@@_window_line_int \l_@@_window_int
-        \@@_build_window:
-        \@@_build_column_aux:
-        \@@_build_column_fuzzy_aux:
-      }
+      { \@@_rebuild_window_aux: }
   }
+\cs_new_protected_nopar:Npn \@@_rebuild_window_aux:
+  {
+    \int_sub:Nn \l_@@_window_int { 2 }
+    \box_set_eq_drop:NN \l_@@_last_l_box \l_@@_l_box
+    \box_set_eq_drop:NN \l_@@_last_r_box \l_@@_r_box
+    \box_set_eq:NN \l_@@_bottom_box \l_@@_save_body_box
+    \int_set_eq:NN \l_@@_window_line_int \l_@@_window_int
+    \@@_build_window:
+    \@@_build_column_aux:
+    \@@_build_column_fuzzy_aux:
+  }
+\box_new:N \l_@@_last_l_box
+\box_new:N \l_@@_last_r_box
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1989,9 +2042,7 @@ Copyright and Licence
 \cs_new_protected_nopar:Npn \@@_build_column_strict:
   {
     \group_begin:
-      \skip_zero:N \tex_splittopskip:D
-      \dim_set_eq:NN \tex_vfuzz:D \c_max_dim
-      \int_set_eq:NN \tex_vbadness:D \c_max_int
+      \@@_split_parameter:
       \@@_build_column_aux:
       \box_if_empty:NTF \l_@@_r_box
         { \@@_build_column_strict_auxi: }
@@ -2188,8 +2239,6 @@ Copyright and Licence
     \vbox_set:Nn \l_@@_l_box
       { \vbox_unpack_drop:N \l_@@_l_box }
   }
-\box_new:N \l_@@_last_l_box
-\box_new:N \l_@@_last_r_box
 \box_new:N \g_@@_window_box
 \bool_new:N \l_@@_first_move_bool
 %    \end{macrocode}
@@ -2269,12 +2318,12 @@ Copyright and Licence
 \cs_new_protected_nopar:Npn \@@_build_hangfrom:
   {
     \group_begin:
-      \skip_zero:N \tex_splittopskip:D
       \vbox_gset:Nn \g_@@_window_box
         {
-          \tex_penalty:D \c_@@_break_int
+          \@@_break:
           \vbox_unpack:N \l_@@_body_box
         }
+      \@@_split_parameter:
       \vbox_set_split_to_ht:NNn \l_@@_last_box \g_@@_window_box
         { \c_zero_dim }
       \dim_gset:Nn \g_@@_ht_dim
@@ -2375,12 +2424,6 @@ Copyright and Licence
   {
     \@@_if_last_none:F { \@@_newline: }
     \hbox_unpack_drop:N \g_@@_pos_box
-  }
-\cs_new_protected_nopar:Npn \@@_newline:
-  {
-    \tex_penalty:D \c_@@_nobreak_int
-    \tex_hfil:D
-    \tex_penalty:D \c_@@_break_int
   }
 \cs_new_protected:Npn \@@_hbox:n #1
   {
@@ -3132,9 +3175,9 @@ Copyright and Licence
 \cs_new_protected_nopar:Npn \@@_unknown_key_error:n
   { \msg_error:nnn { wstf } { unknown-key } }
 \msg_new:nnnn { wstf } { unknown-key }
-  { The~key~'#1'~is~unknown~and~is~being~ignored. }
+  { The~key~"#1"~is~unknown~and~is~being~ignored. }
   {
-    The~package~wrapstuff~does~not~have~a~key~called~'#1'.\\
+    The~package~wrapstuff~does~not~have~a~key~called~"#1".\\
     Check~that~you~have~spelled~the~key~name~correctly.
   }
 %    \end{macrocode}
