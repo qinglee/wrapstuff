@@ -1306,10 +1306,10 @@ Copyright and Licence
       {
         \exp_last_unbraced:Ne \@@_unit_aux:w
           { \dim_to_decimal_in_unit:nn {#1} { \tex_baselineskip:D } }
-        \q_stop
+        \s_stop
       }
   }
-\cs_new:Npn \@@_unit_aux:w #1 . #2 \q_stop
+\cs_new:Npn \@@_unit_aux:w #1 . #2 \s_stop
   { #1 + 1 }
 %    \end{macrocode}
 % \end{macro}
@@ -1722,15 +1722,15 @@ Copyright and Licence
       {
         \bool_gset_false:N \g_@@_eqnum_bool
         \hbox_unpack:N \g_@@_equation_box
-        \@@_if_last_hlist:F { \use_none_delimit_by_q_stop:w }
+        \@@_if_last_hlist:F { \use_none_delimit_by_s_stop:w }
         \box_gset_to_last:N \g_@@_eqnum_box
-        \@@_if_last_kern:F  { \use_none_delimit_by_q_stop:w }
+        \@@_if_last_kern:F  { \use_none_delimit_by_s_stop:w }
         \tex_unkern:D
-        \@@_if_last_hlist:F { \use_none_delimit_by_q_stop:w }
+        \@@_if_last_hlist:F { \use_none_delimit_by_s_stop:w }
         \box_gset_to_last:N \g_@@_eqbody_box
-        \@@_if_last_none:F  { \use_none_delimit_by_q_stop:w }
+        \@@_if_last_none:F  { \use_none_delimit_by_s_stop:w }
         \bool_gset_true:N \g_@@_eqnum_bool
-        \use_none_delimit_by_q_stop:w \q_stop
+        \use_none_delimit_by_s_stop:w \s_stop
       }
   }
 \cs_new_protected_nopar:Npn \@@_adjust_equation_width:
@@ -2790,7 +2790,7 @@ Copyright and Licence
     \@@_add_last_skip:w
     \@@_add_last_skip:w
     \@@_add_last_penalty:w
-    \@@_add_last_finalise:w \q_stop
+    \@@_add_last_finalise:w \s_stop
   }
 \cs_new_protected_nopar:Npn \@@_extract_pos_hbox:
   {
@@ -2809,7 +2809,7 @@ Copyright and Licence
 \cs_new_protected_nopar:Npn \@@_add_last_stop:w
   {
     \vbox_unpack_drop:N \l_@@_add_box
-    \use_none_delimit_by_q_stop:w
+    \use_none_delimit_by_s_stop:w
   }
 %    \end{macrocode}
 % \end{macro}
@@ -2895,7 +2895,7 @@ Copyright and Licence
       }
       { \box_gset_eq_drop:NN \g_@@_display_box \l_@@_add_box }
       { \vbox_unpack_drop:N \l_@@_add_box }
-    \use_none_delimit_by_q_stop:w
+    \use_none_delimit_by_s_stop:w
   }
 \int_new:N \g_@@_display_pre_int
 \skip_new:N \g_@@_display_pre_skip
