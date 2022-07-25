@@ -173,7 +173,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{3080}
+% \CheckSum{3079}
 %
 % \changes{v0.1}{2022/07/05}{初始版本。}
 % \changes{v0.1}{2022/07/20}{首次提交到 CTAN 发布。}
@@ -1773,9 +1773,7 @@ Copyright and Licence
     \dim_gset:Nn \g_@@_prevdepth_dim
       { \box_dp:N \l_@@_window_box }
     \bool_gset_false:N \g_@@_equation_dp_bool
-    \bool_lazy_or:nnTF
-      { \g_@@_right_move_bool }
-      { \g_@@_next_bool }
+    \bool_if:NTF \g_@@_next_bool
       {
         \tex_vadjust:D
           {
