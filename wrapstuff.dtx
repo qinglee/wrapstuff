@@ -173,7 +173,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{3014}
+% \CheckSum{3080}
 %
 % \changes{v0.1}{2022/07/05}{初始版本。}
 % \changes{v0.1}{2022/07/20}{首次提交到 CTAN 发布。}
@@ -721,6 +721,14 @@ Copyright and Licence
 %    \end{macrocode}
 % \end{macro}
 %
+% \begin{macro}{\@@_para_raw_end:}
+% 将 \cs{para_raw_end:} 放在分组中是为了保持 \tn{parshape}。
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_para_raw_end:
+  { \group_begin: \para_raw_end: \group_end: }
+%    \end{macrocode}
+% \end{macro}
+%
 % \begin{macro}{\@@_gadd_ht:Nn}
 %    \begin{macrocode}
 \cs_new_protected:Npn \@@_gadd_ht:Nn #1#2
@@ -962,6 +970,7 @@ Copyright and Licence
 % 而不用更为方便的 \cs{hook_gput_next_code:nn} 实现。
 %    \begin{macrocode}
 \@@_gadd_hook:nn { para/before } { \@@_para_before: }
+\@@_gadd_hook:nn { para/after }  { \@@_para_after: }
 \@@_gadd_hook:nn { para/begin }  { \@@_para_begin: }
 \@@_gadd_hook:nn { para/end }    { \@@_para_end: }
 \cs_new_protected_nopar:Npn \@@_next_para:
@@ -979,12 +988,14 @@ Copyright and Licence
 \cs_new_protected_nopar:Npn \@@_clear_para_hook:
   {
     \cs_gset_eq:NN \@@_para_before: \@@_empty:
+    \cs_gset_eq:NN \@@_para_after:  \@@_empty:
     \cs_gset_eq:NN \@@_para_begin:  \@@_empty:
     \cs_gset_eq:NN \@@_para_end:    \@@_empty:
   }
 \cs_new_protected_nopar:Npn \@@_empty:
   { }
 \cs_new_eq:NN \@@_para_before: \@@_empty:
+\cs_new_eq:NN \@@_para_after:  \@@_empty:
 \cs_new_eq:NN \@@_para_begin:  \@@_empty:
 \cs_new_eq:NN \@@_para_end:    \@@_empty:
 %    \end{macrocode}
@@ -1057,7 +1068,8 @@ Copyright and Licence
       \int_gset_eq:NN \g_@@_line_int \tex_prevgraf:D
     \vbox_set_end:
     \@@_adjust_tex_skip:
-    \cs_gset_eq:NN \@@_para_end: \@@_empty:
+    \cs_gset_eq:NN \@@_para_end:   \@@_empty:
+    \cs_gset_eq:NN \@@_para_after: \@@_empty:
     \int_compare:nNnTF \g_@@_line_int > \l_@@_top_int
       { \@@_build_par: }
       { \@@_put_par: }
@@ -1426,7 +1438,7 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_put_body_box:
   {
-    \para_raw_end:
+    \@@_para_raw_end:
     \dim_compare:nNnTF { \box_wd:N \l_@@_body_box } < \c_max_dim
       { \@@_put_body_aux:N \l_@@_body_box }
       {
@@ -1434,13 +1446,33 @@ Copyright and Licence
         \@@_put_body_aux:N \l_@@_body_box
         \box_set_eq_drop:NN \l_@@_body_box \l_@@_bottom_box
       }
-    \para_raw_end:
+    \@@_para_raw_end:
   }
 \cs_new_protected_nopar:Npn \@@_put_body_aux:N #1
   {
     \dim_gset:Nn \g_@@_prevdepth_dim { \box_dp:N #1 }
+    \dim_compare:nNnT \g_@@_prevdepth_dim = \c_zero_dim
+      { \@@_extract_depth:N #1 }
     \vbox_unpack_drop:N #1
     \@@_set_prevdepth:N \g_@@_prevdepth_dim
+  }
+\cs_new_protected_nopar:Npn \@@_extract_depth:N #1
+  {
+    \vbox_set:Nn \l_@@_last_box
+      {
+        \vbox_unpack:N #1
+        \@@_if_last_hlist:F
+          {
+            \tex_unskip:D \tex_unpenalty:D
+            \tex_unskip:D \tex_unpenalty:D
+          }
+        \@@_if_last_hlist:T
+          {
+            \box_set_to_last:N \l_@@_last_box
+            \dim_gset:Nn \g_@@_prevdepth_dim
+              { \box_dp:N \l_@@_last_box }
+          }
+      }
   }
 %    \end{macrocode}
 % \end{macro}
@@ -1738,6 +1770,9 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_add_pos_kludge:
   {
+    \dim_gset:Nn \g_@@_prevdepth_dim
+      { \box_dp:N \l_@@_window_box }
+    \bool_gset_false:N \g_@@_equation_dp_bool
     \bool_lazy_or:nnTF
       { \g_@@_right_move_bool }
       { \g_@@_next_bool }
@@ -1745,7 +1780,7 @@ Copyright and Licence
         \tex_vadjust:D
           {
             \box_if_empty:NF \g_@@_equation_box
-              { \vbox_unpack_drop:N \g_@@_equation_box }
+              { \@@_output_equation_box: }
             \@@_nobreak:
             \bool_if:NT \l_@@_display_bool
               { \skip_vertical:N \g_@@_pos_skip }
@@ -1757,7 +1792,7 @@ Copyright and Licence
             \tex_vadjust:D
               {
                 \box_if_empty:NF \g_@@_equation_box
-                  { \vbox_unpack_drop:N \g_@@_equation_box }
+                  { \@@_output_equation_box: }
                 \tex_penalty:D \g_@@_pos_int
                 \skip_vertical:N \g_@@_pos_skip
               }
@@ -1766,6 +1801,23 @@ Copyright and Licence
     \int_gzero:N \g_@@_pos_int
     \skip_gzero:N \g_@@_pos_skip
   }
+\cs_new_protected_nopar:Npn \@@_output_equation_box:
+  {
+    \cs_gset_eq:NN
+      \@@_para_after:
+      \@@_set_equation_depth:
+    \bool_gset_true:N \g_@@_equation_dp_bool
+    \dim_gset:Nn \g_@@_prevdepth_dim
+      { \box_dp:N \g_@@_equation_box }
+    \vbox_unpack_drop:N \g_@@_equation_box
+  }
+\cs_new_protected_nopar:Npn \@@_set_equation_depth:
+  {
+    \cs_gset_eq:NN \@@_para_after: \@@_empty:
+    \bool_gset_false:N \g_@@_equation_dp_bool
+    \@@_set_prevdepth:N \g_@@_prevdepth_dim
+  }
+\bool_new:N \g_@@_equation_dp_bool
 %    \end{macrocode}
 % \end{macro}
 %
@@ -1883,18 +1935,12 @@ Copyright and Licence
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\@@_break:,\@@_nobreak:,\@@_newline:}
+% \begin{macro}{\@@_break:,\@@_nobreak:}
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_break:
   { \tex_penalty:D \c_@@_break_int }
 \cs_new_protected_nopar:Npn \@@_nobreak:
   { \tex_penalty:D \c_@@_nobreak_int }
-\cs_new_protected_nopar:Npn \@@_newline:
-  {
-    \tex_penalty:D \c_@@_nobreak_int
-    \tex_hfil:D
-    \tex_penalty:D \c_@@_break_int
-  }
 \int_const:Nn \c_@@_break_int { -10000 }
 \int_const:Nn \c_@@_nobreak_int { 10000 }
 %    \end{macrocode}
@@ -2343,7 +2389,7 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_put_box:
   {
-    \para_raw_end:
+    \@@_para_raw_end:
     \dim_compare:nNnTF \g_@@_prevdepth_dim > \c_@@_ignore_depth_dim
       { \@@_add_vskip: }
       { \@@_set_vskip: }
@@ -2399,17 +2445,13 @@ Copyright and Licence
   }
 \cs_new_protected_nopar:Npn \@@_put_bottom_box:
   {
-    \@@_newline:
+    \@@_para_raw_end:
+    \para_raw_noindent:
     \hbox_unpack_drop:N \l_@@_bottom_box
     \box_if_empty:NF \g_@@_equation_box
       { \@@_insert_equation: }
     \@@_put_pos_box:
     \@@_clear_variable:
-  }
-\cs_new_protected_nopar:Npn \@@_put_pos_box:
-  {
-    \box_if_empty:NF \g_@@_pos_box
-      { \@@_output_pos_box: }
   }
 \cs_new_protected_nopar:Npn \@@_output_window_box:
   {
@@ -2420,10 +2462,23 @@ Copyright and Licence
           { \@@_output_stuff_box: }
       }
   }
+\cs_new_protected_nopar:Npn \@@_put_pos_box:
+  {
+    \box_if_empty:NF \g_@@_pos_box
+      { \@@_output_pos_box: }
+  }
 \cs_new_protected_nopar:Npn \@@_output_pos_box:
   {
-    \@@_if_last_none:F { \@@_newline: }
+    \@@_if_last_none:F
+      { \@@_output_pos_box_aux: }
     \hbox_unpack_drop:N \g_@@_pos_box
+  }
+\cs_new_protected_nopar:Npn \@@_output_pos_box_aux:
+  {
+    \@@_para_raw_end:
+    \bool_if:NT \g_@@_equation_dp_bool
+      { \@@_set_equation_depth: }
+    \para_raw_noindent:
   }
 \cs_new_protected:Npn \@@_hbox:n #1
   {
