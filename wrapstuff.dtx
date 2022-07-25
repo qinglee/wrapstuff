@@ -2955,7 +2955,8 @@ Copyright and Licence
 % \env{align} 等环境的开头 \tn{ifdt@p} 为真，会插入两个 \tn{vskip}，
 % 但是 \env{multline} 定义中的 \tn{mmeasure@} 没有重定义 \tn{everycr}，
 % 上述定义中的 \tn{dt@pfalse} 被执行，导致环境开头被加入了 \tn{penalty}，
-% 不确定是有意为之还是疏忽。
+% 不确定是有意为之还是疏忽^^A
+% \footnote{\url{https://github.com/latex3/latex2e/issues/793}}。
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_amsmath_multline:w
   {
