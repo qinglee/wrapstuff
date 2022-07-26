@@ -173,7 +173,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{3079}
+% \CheckSum{3127}
 %
 % \changes{v0.1}{2022/07/05}{初始版本。}
 % \changes{v0.1}{2022/07/20}{首次提交到 CTAN 发布。}
@@ -843,7 +843,9 @@ Copyright and Licence
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\@@_attach_label:, \@@_write_label:}
+% \changes{v0.2}{2022/07/26}{优化重新编译警告。}
+%
+% \begin{macro}{\@@_attach_label:, \@@_write_label:,\@@_rerun_check:}
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_attach_label:
   {
@@ -856,20 +858,26 @@ Copyright and Licence
   }
 \cs_new_protected_nopar:Npn \@@_write_label:
   {
-    \iow_shipout_x:Nx \@auxout
+    \exp_args:Nee \@@_write_label_aux:nn
+      { \@@_counter:n { wrapstuff } }
+      { \@@_counter:n { page } }
+  }
+\cs_new_protected:Npx \@@_write_label_aux:nn #1#2
+  {
+    \prop_gput_if_new:Nnn \exp_not:N \g_@@_page_prop {#1} {#2}
+    \iow_shipout_x:Nn \exp_not:N \@auxout
       {
         \c_backslash_str wrapstuff@label
-          { \@@_counter:n { wrapstuff } }
+          {#1}
           { \exp_not:N \wrapstuff@counter { page } }
       }
   }
+\newcounter { wrapstuff }
 \cs_new:Npn \@@_counter:n #1
   { \int_value:w \value {#1} }
 \cs_new_eq:NN \wrapstuff@counter \@@_counter:n
 \cs_new_protected_nopar:Npn \wrapstuff@label
-  { \@newl@bel { wrapstuff@label } }
-\tl_const:Nn \c_@@_label_tl
-  { wrapstuff@label@ \int_value:w \value { wrapstuff } }
+  { \prop_gput:Nnn \g_@@_page_prop }
 \@@_gadd_hook:nn { begindocument }
   {
     \legacy_if:nTF { @filesw }
@@ -882,7 +890,35 @@ Copyright and Licence
       }
       { \cs_gset_eq:NN \@@_write_label: \@@_empty: }
   }
-\newcounter { wrapstuff }
+\@@_gadd_hook:nn { enddocument/afterlastpage }
+  {
+    \legacy_if:nT { @filesw }
+      { \prop_gclear:N \g_@@_page_prop }
+  }
+\@@_gadd_hook:nn { enddocument/info }
+  {
+    \prop_if_empty:NF \g_@@_rerun_prop
+      { \@@_rerun_check: }
+  }
+\cs_new_protected_nopar:Npn \@@_rerun_check:
+  {
+    \prop_map_inline:Nn \g_@@_rerun_prop
+      {
+        \prop_get:NnN \g_@@_page_prop { ##1 } \l_@@_page_tl
+        \int_if_even:nF { \l_@@_page_tl - ##2 }
+          { \prop_map_break:n { \@@_rerun_warning: } }
+      }
+  }
+\cs_new_protected_nopar:Npn \@@_rerun_warning:
+  { \msg_warning:nn { wstf } { rerun-required } }
+\msg_new:nnn { wstf } { rerun-required }
+  {
+    Page(s)~may~have~changed.\\
+    Rerun~to~get~i/o~setting~right.
+  }
+\tl_new:N \l_@@_page_tl
+\prop_new:N \g_@@_page_prop
+\prop_new:N \g_@@_rerun_prop
 %    \end{macrocode}
 % \end{macro}
 %
@@ -944,19 +980,22 @@ Copyright and Licence
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_swap_ratio:
   {
+    \exp_args:Ne \@@_swap_ratio_aux:n
+      { \@@_counter:n { wrapstuff } }
+  }
+\cs_new_protected:Npn \@@_swap_ratio_aux:n #1
+  {
     \fp_compare:nF
       { \c_zero_fp < \l_@@_ratio_fp < \c_one_fp }
       { \fp_zero:N \l_@@_ratio_fp }
-    \int_if_odd:nTF
-      {
-        \exp_args:Ne \cs_if_exist_use:cF
-          { \c_@@_label_tl }
-          { \@@_counter:n { page } }
-      }
+    \prop_get:NnNF \g_@@_page_prop {#1} \l_@@_page_tl
+      { \tl_set:Nx \l_@@_page_tl { \@@_counter:n { page } } }
+    \int_if_odd:nTF { \l_@@_page_tl }
       { \bool_if:NTF \l_@@_inner_bool }
       { \bool_if:NTF \l_@@_outer_bool }
       { \@@_set_ratio:N \l_@@_ratio_fp }
       { \@@_set_ratio:n { \c_one_fp - \l_@@_ratio_fp } }
+    \prop_gput:Nno \g_@@_rerun_prop {#1} { \l_@@_page_tl }
   }
 \bool_new:N \l_@@_swap_bool
 \bool_new:N \l_@@_inner_bool
