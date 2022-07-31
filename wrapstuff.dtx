@@ -173,7 +173,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{3127}
+% \CheckSum{3129}
 %
 % \changes{v0.1}{2022/07/05}{初始版本。}
 % \changes{v0.1}{2022/07/20}{首次提交到 CTAN 发布。}
@@ -2422,6 +2422,8 @@ Copyright and Licence
 %    \end{macrocode}
 % \end{macro}
 %
+% \changes{v0.3}{2022/07/31}{修复 stuff 深度不为零时的垂直对齐问题。}
+%
 % \begin{macro}{\@@_put_box:}
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_put_box:
@@ -2537,6 +2539,7 @@ Copyright and Licence
         \@@_parshape_kern:
         \box_move_up:nn
           {
+              \box_dp:N \g_@@_stuff_box
             + \box_ht:N \l_@@_window_box
             - (   \l_@@_window_ht_dim
                 + \box_ht_plus_dp:N \g_@@_stuff_box ) / 2
