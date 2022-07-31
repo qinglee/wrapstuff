@@ -239,6 +239,8 @@ Copyright and Licence
 %     width = <宽度>
 %   \end{syntax}
 %   设置绕排内容的宽度，初始值为 \qty{0}{pt}，代表自然宽度。
+%   此时，\env{wrapstuff} 环境内的内容只能有一行，不能使用 |\\| 换行或者 \tn{par} 分段。
+%   如果需要在环境内换行或者分段，就需要将 \opt{width} 设置成合适的宽度。
 % \end{function}
 %
 % \begin{function}{height}
