@@ -124,7 +124,7 @@ Copyright and Licence
 %<+package>\GetIdInfo$Id$
 %<package>  {Wrapping text around stuff}
 %<package>\ProvidesExplPackage{\ExplFileName}
-%<package>  {\ExplFileDate}{0.2}{\ExplFileDescription}
+%<package>  {\ExplFileDate}{0.3}{\ExplFileDescription}
 %<*driver>
 \documentclass{ctxdoc}
 \usepackage{wrapstuff}
@@ -173,7 +173,7 @@ Copyright and Licence
 %</driver>
 % \fi
 %
-% \CheckSum{3129}
+% \CheckSum{3127}
 %
 % \changes{v0.1}{2022/07/05}{初始版本。}
 % \changes{v0.1}{2022/07/20}{首次提交到 CTAN 发布。}
@@ -689,14 +689,12 @@ Copyright and Licence
 \group_begin:
 \cs_set:Npn \@@_tmp:nn #1
   {
-    \group_begin:
-      \exp_args:Ncc \@@_tmp_aux:NNn
-        { @@_if_last_ #1 : }
-        { c_@@_ #1 _node }
+    \exp_args:Ncc \@@_tmp_aux:NNn
+      { @@_if_last_ #1 : }
+      { c_@@_ #1 _node }
   }
 \cs_set:Npn \@@_tmp_aux:NNn #1#2#3
   {
-    \group_end:
     \int_const:Nn #2 {#3}
     \prg_new_conditional:Npnn #1 { T , F , TF }
       {
