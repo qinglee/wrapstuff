@@ -1,0 +1,247 @@
+% !TeX program  = XeLaTeX
+% !TeX encoding = UTF-8
+%
+% This is file `wrapstuff-doc-en.tex`.
+% This file contains an English translation of the manual for the `wrapstuff` package (Copyright (C) 2022 by Qing Lee <sobenlee@gmail.com>).
+%
+% Translation by Jasper Habicht <mail@jasperhabicht.de>.
+% This file is under the same licence as the relevant files of the `wrapstuff` package.
+%
+\documentclass{ctxdoc}
+\usepackage{wrapstuff}
+\usepackage{graphicx}
+\usepackage{zhlipsum}
+
+\ExplSyntaxOn
+\makeatletter
+\DeclareDocumentCommand \gitsha { m }
+  {
+    \href { https \c_colon_str //github.com/qinglee/wrapstuff/commit/#1 }
+          { rev. ~ \texttt{#1} }
+  }
+\DeclareDocumentCommand \QIANZIWEN { }
+  {
+    天地玄黄宇宙洪荒日月盈昃辰宿列张
+    寒来暑往秋收冬藏闰馀成岁律召调阳 \par
+    云腾致雨露结为霜金生丽水玉出昆冈 \par
+  }
+\DeclareDocumentCommand \ADDSPECEIALKEY { m }
+  {
+    \cs_gset_eq:NN \@@_codedoc_names_typeset_save:
+                   \__codedoc_names_typeset:
+    \cs_gset_protected:Npn \__codedoc_names_typeset:
+      {
+        \cs_gset_eq:NN \__codedoc_names_typeset:
+                       \@@_codedoc_names_typeset_save:
+        \__codedoc_names_typeset:
+        #1 \\
+      }
+  }
+\DeclareDocumentCommand \IMAGE { m m }
+  { \includegraphics [ width = \dim_eval:n {#1} ] { example-image-#2.pdf } }
+\tl_put_left:Nn \Example
+  { \trivlist \item \relax }
+\tl_put_right:Nn \endExample
+  { \endtrivlist }
+\SideBySideExampleSet { numbers = none }
+\makeatother
+\ExplSyntaxOff
+
+\ctexset{
+  abstractname   = Abstract,
+  indexname      = Index,
+  section/format = \Large\bfseries\raggedright,
+  section/name   = {{},.\space},
+}
+
+\begin{document}
+
+  \changes{v0.1}{2022/07/05}{Initial version.}
+  \changes{v0.1}{2022/07/20}{First version submitted to CTAN.}
+  \changes{v0.2}{2022/07/21}{改进放置方式。}
+
+  \title{\bfseries The \pkg{wrapstuff} Package}
+  \author{LI Qing\thanks{Translation by Jasper Habicht <mail@jasperhabicht.de>}}
+  \date{\filedate\qquad\fileversion\thanks{\gitsha{\ExplFileVersion}.}}
+  \maketitle
+
+  \begin{documentation}
+
+  \section{Basic Usage}
+
+  The \pkg{wrapstuff} package provides an alternative way for arranging the layout of images and text.
+  The \pkg{wrapstuff} package tries to combine and extend the functionality of packages such as \pkg{picinpar}, \pkg{floatflt}, \pkg{wrapfig},
+  \pkg{cutwin} or \pkg{wrapfig2}.
+  This package is compatible with the \pkg{caption} package, the \pkg{float} package and the \pkg{floatrow} package and aims at being compatible with (display) math environments as well as the various \LaTeX\ environments for typesetting tables, which it can wrap properly.
+
+  The implementation of the \pkg{wrapstuff} package relies on the paragraph hook management provided by \LaTeX\ 2021-06-01 or later. It requires \LaTeXiii\ 2022-04-10 or later.
+
+  \begin{function}{wrapstuff}
+    \begin{syntax}
+      \tn{begin}\{wrapstuff\}\oarg{options}
+        <contents to be wrapped>
+      \tn{end}\{wrapstuff\}
+      <wrapped text>
+    \end{syntax}
+    The \pkg{wrapstuff} package only provides the \env{wrapstuff} environment, which will let the following paragraph wrap around its contents. For example:
+    \begin{Example}[frame=single,numbers=none,gobble=5]
+      \begin{wrapstuff}[c,top=1]
+        \includegraphics[width=\dimeval{\linewidth/3}]{example-image.pdf}
+      \end{wrapstuff}
+      \zhlipsum[1][name=zhufu]
+    \end{Example}
+  \end{function}
+
+ \begin{function}{\wrapstuffset}
+   \begin{syntax}
+     \tn{wrapstuffset} \Arg{option list}
+   \end{syntax}
+   Options to the \pkg{wrapstuff} package can be set when loading the package with the \tn{usepackage} macro as well as later using \tn{wrapstuffset}.
+   The followig options are available:
+ \end{function}
+
+ \ADDSPECEIALKEY{\textrm{\meta{n}}}
+ \begin{function}{top}
+   \begin{syntax}
+     top = <non-negative integer>
+   \end{syntax}
+   This option sets the line number where the wrapping should start. The option can take any non-negative integer \meta{n}.
+   The initial value is \num{0}。
+ \end{function}
+
+ \begin{function}{width}
+   \begin{syntax}
+     width = <dimension>
+   \end{syntax}
+   This option sets the width. The initial value is \qty{0}{pt}, denoting the natural width of the contents of the \env{wrapstuff} environment.
+   Using the initial value of \qty{0}{pt}, the contents of the \env{wrapstuff} environment can only take one line and may not contain |\\| for inserting linebreaks or \tn{par} to split paragraphs.
+   If you want to break lines or put several paragraphs into the \env{wrapstuff} environmentment, the option \opt{width} must be set to an appropiate dimension.
+ \end{function}
+
+ \begin{function}{height}
+   \begin{syntax}
+     height = <dimension>
+   \end{syntax}
+   This option sets the height of the wrapped content. The initial value is \qty{0}{pt}, denoting the natural height of the contents of the \env{wrapstuff} environment.
+ \end{function}
+
+ \begin{function}{lines}
+   \begin{syntax}
+     lines = <integer>
+   \end{syntax}
+   This option sets the number of lines the wrapped contents should cover. It takes any integer.
+   The initial value is empty, which means that the number of lines is calculated from the contents of the \env{wrapstuff} environment.
+ \end{function}
+
+ \begin{function}{linewidth}
+   \begin{syntax}
+     linewidth = <dimension>
+   \end{syntax}
+   This option sets the line width of the surrounding text. The initial value is |\linewidth|. This option needs not to be changed in general.
+ \end{function}
+
+ \begin{function}{l,r,c,i,o,ratio}
+   \begin{syntax}
+     l/r/c/i/o
+     ratio = <real number>
+   \end{syntax}
+   These options are used to set the arrangement of the contents of the \env{wrapstuff} environment relative to the surrounding text.
+   The options \opt{l/r/c/i/o} set the alignment of the contents of the \env{wrapstuff} environment such that it sits on the left side, the right side, in the center, on the inner side or on the outer side of the surrounding text respectively.
+   The option \opt{ratio} sets the ratio of the width of the part of the surrounding text that wraps around the left side. It can be set to any sensible real number within the range $[0,1]$.
+   The options \opt{i/o} can be used together with the option \opt{ratio}.
+   The initial value is |r|, which means that the contents of the \env{wrapstuff} environment sits on the right side and the surrounding text wraps around the left side.
+ \end{function}
+
+ \begin{function}{column}
+   \begin{syntax}
+     column = <(true)|false|par>
+   \end{syntax}
+   This option contols whether the contents of the \env{wrapstuff} environment should be wrapped by text that is split over two columns. Setting this option to |true| only works if the option \opt{c} is set or the option \opt{ratio} is set to a value other than $0$ or $1$.
+   \opt{false} means that the characters of the surrounding text are typeset from the left to the right for each line.
+   \opt{par} means sets the unit for typesetting columns to paragraphs. Compare the below example:
+   \begin{SideBySideExample}[xrightmargin=\dimeval{20em+5mm}]
+     \begin{wrapstuff}[c,1]
+       \IMAGE{2em}{a}
+     \end{wrapstuff}
+     \QIANZIWEN
+     \begin{wrapstuff}[c,1,column=par]
+       \IMAGE{2em}{b}
+     \end{wrapstuff}
+     \QIANZIWEN
+     \begin{wrapstuff}[c,0,column=false]
+       \IMAGE{2em}{c}
+     \end{wrapstuff}
+     \QIANZIWEN
+   \end{SideBySideExample}
+ \end{function}
+
+ \begin{function}{leftsep,rightsep,hsep}
+   \begin{syntax}
+     leftsep  = <dimension>
+     rightsep = <dimension>
+     hsep     = <dimension>
+   \end{syntax}
+   These options set the width of the margin to the right and left of the contents of the \env{wrapstuff} environment to separate it from the surrounding text. The option \opt{hsep} sets the same value for \opt{leftsep} and \opt{rightsep}. The initial value is \qty{1}{em}.
+ \end{function}
+
+ \begin{function}{abovesep,belowsep,vsep}
+   \begin{syntax}
+     abovesep = <dimension>
+     belowsep = <dimension>
+     vsep     = <dimension>
+  \end{syntax}
+  These options set the width of the margin above and below the contents of the \env{wrapstuff} environment to separate it from the surrounding text. The option \opt{vsep} sets the same value for \opt{abovesep} and \opt{belowsep}. The initial value is \qty{0}{pt}.
+ \end{function}
+
+ \begin{function}{hoffset}
+   \begin{syntax}
+     hoffset = <dimension>
+   \end{syntax}
+   This option sets the length of the horizontal offset the contents of the \env{wrapstuff} environment should extend over the text margin.
+   If the option \opt{c} is set or the option \opt{ratio} is set to $0$ or $1$, this option has no effect.
+   A specific value for \tn{width} can be used to set the total width of the contents of the \env{wrapstuff} environment and the relevant offset.
+   Setting \opt{hoffset} to the value of \tn{width} will completely shift the contents of the \env{wrapstuff} environment outside the text margin.
+   The initial value is \qty{0}{pt}.
+ \end{function}
+
+ \begin{function}{voffset}
+   \begin{syntax}
+     voffset = <dimension>
+   \end{syntax}
+   This option can be used to control the vertical positioning of the contents of the \env{wrapstuff} environment.
+   The initial value is \qty{0}{pt}。
+ \end{function}
+
+ \begin{function}{type}
+   \begin{syntax}
+     type = <type of floating environment>
+   \end{syntax}
+   This option controls the type of the floating environment that should be used for the contents of the \env{wrapstuff} environment. The initial value is empty.
+   If the \tn{caption} macro should be used inside the \env{wrapstuff} environment,
+   the value of the \opt{type} option should be set to \opt{figure} or \opt{table} (or the type of the relevant floating environment that is used) and the \opt{width} option should be set to a specific length.
+   \begin{SideBySideExample}[xrightmargin=\dimeval{18em+5mm}]
+     \begin{wrapstuff}[type=figure,width=5em]
+       \centering
+       \IMAGE{4em}{plain}
+       \caption{Example}
+     \end{wrapstuff}
+     \QIANZIWEN
+   \end{SideBySideExample}
+ \end{function}
+
+ \begin{function}{\wrapstuffclear}
+   If the line count of the current paragraph of the surrounding text is not sufficient to fully enclose the contents of the \env{wrapstuff} environment, the wrapping will continue in the following paragraph.
+   This may lead to some unwanted outcomes. If \tn{wrapstuffclear} is used before the following paragraph, this standard behavior that the wrapping continues is cancelled.
+ \end{function}
+
+ \end{documentation}
+
+
+ \begin{implementation}
+
+  \section{Implementation}
+
+  Please refer to the Chinese manual for information about the implementation of this package.
+
+  \end{implementation}
+\end{document}
