@@ -11,6 +11,10 @@
 \usepackage{wrapstuff}
 \usepackage{graphicx}
 \usepackage{zhlipsum}
+\usepackage{lipsum}
+
+\usepackage[french,english]{babel}
+\hyphenation{rid-icu-lus}
 
 \ExplSyntaxOn
 \makeatletter
@@ -18,12 +22,6 @@
   {
     \href { https \c_colon_str //github.com/qinglee/wrapstuff/commit/#1 }
           { rev. ~ \texttt{#1} }
-  }
-\DeclareDocumentCommand \QIANZIWEN { }
-  {
-    天地玄黄宇宙洪荒日月盈昃辰宿列张
-    寒来暑往秋收冬藏闰馀成岁律召调阳 \par
-    云腾致雨露结为霜金生丽水玉出昆冈 \par
   }
 \DeclareDocumentCommand \ADDSPECEIALKEY { m }
   {
@@ -47,11 +45,22 @@
 \makeatother
 \ExplSyntaxOff
 
+\DeclareDocumentCommand \EXAMPLE { }
+  {
+    \selectlanguage{french}
+    Frère Jacques, Frère Jacques, \par
+    Dor\-mez-vous? Dor\-mez-vous? \par
+    Sonnez les matines! Sonnez les matines! \par
+    Ding, dang, dong. Ding, dang, dong. \par
+    \selectlanguage{english}
+  }
+
 \ctexset{
   abstractname   = Abstract,
   indexname      = Index,
   section/format = \Large\bfseries\raggedright,
   section/name   = {{},.\space},
+  figurename     = Figure,
 }
 
 \begin{document}
@@ -86,9 +95,9 @@
     The \pkg{wrapstuff} package only provides the \env{wrapstuff} environment, which will let the following paragraph wrap around its contents. For example:
     \begin{Example}[frame=single,numbers=none,gobble=5]
       \begin{wrapstuff}[c,top=1]
-        \includegraphics[width=\dimeval{\linewidth/3}]{example-image.pdf}
+        \includegraphics[width=\dimeval{\linewidth/4}]{example-image.pdf}
       \end{wrapstuff}
-      \zhlipsum[1][name=zhufu]
+      \lipsum[2]
     \end{Example}
   \end{function}
 
@@ -159,19 +168,19 @@
    This option contols whether the contents of the \env{wrapstuff} environment should be wrapped by text that is split over two columns. Setting this option to |true| only works if the option \opt{c} is set or the option \opt{ratio} is set to a value other than $0$ or $1$.
    \opt{false} means that the characters of the surrounding text are typeset from the left to the right for each line.
    \opt{par} means sets the unit for typesetting columns to paragraphs. Compare the below example:
-   \begin{SideBySideExample}[xrightmargin=\dimeval{20em+5mm}]
+   \begin{SideBySideExample}[xrightmargin=\dimeval{22em+5mm}]
      \begin{wrapstuff}[c,1]
        \IMAGE{2em}{a}
      \end{wrapstuff}
-     \QIANZIWEN
+     \EXAMPLE
      \begin{wrapstuff}[c,1,column=par]
        \IMAGE{2em}{b}
      \end{wrapstuff}
-     \QIANZIWEN
+     \EXAMPLE
      \begin{wrapstuff}[c,0,column=false]
        \IMAGE{2em}{c}
      \end{wrapstuff}
-     \QIANZIWEN
+     \EXAMPLE
    \end{SideBySideExample}
  \end{function}
 
@@ -198,7 +207,7 @@
      hoffset = <dimension>
    \end{syntax}
    This option sets the length of the horizontal offset the contents of the \env{wrapstuff} environment should extend over the text margin.
-   If the option \opt{c} is set or the option \opt{ratio} is set to $0$ or $1$, this option has no effect.
+   If the option \opt{c} is set or the option \opt{ratio} is set to a number other than $0$ or $1$, this option has no effect.
    A specific value for \tn{width} can be used to set the total width of the contents of the \env{wrapstuff} environment and the relevant offset.
    Setting \opt{hoffset} to the value of \tn{width} will completely shift the contents of the \env{wrapstuff} environment outside the text margin.
    The initial value is \qty{0}{pt}.
@@ -219,13 +228,13 @@
    This option controls the type of the floating environment that should be used for the contents of the \env{wrapstuff} environment. The initial value is empty.
    If the \tn{caption} macro should be used inside the \env{wrapstuff} environment,
    the value of the \opt{type} option should be set to \opt{figure} or \opt{table} (or the type of the relevant floating environment that is used) and the \opt{width} option should be set to a specific length.
-   \begin{SideBySideExample}[xrightmargin=\dimeval{18em+5mm}]
-     \begin{wrapstuff}[type=figure,width=5em]
+   \begin{SideBySideExample}[xrightmargin=\dimeval{19em+5mm}]
+     \begin{wrapstuff}[type=figure,width=9em]
        \centering
        \IMAGE{4em}{plain}
        \caption{Example}
      \end{wrapstuff}
-     \QIANZIWEN
+     \EXAMPLE
    \end{SideBySideExample}
  \end{function}
 
