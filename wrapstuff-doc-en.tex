@@ -1,6 +1,6 @@
 % !TeX program  = XeLaTeX
 % !TeX encoding = UTF-8
-%
+% 
 % This is file `wrapstuff-doc-en.tex`.
 % This file contains an English translation of the manual for the `wrapstuff` package (Copyright (C) 2022 by Qing Lee <sobenlee@gmail.com>).
 %
@@ -10,11 +10,6 @@
 \documentclass{ctxdoc}
 \usepackage{wrapstuff}
 \usepackage{graphicx}
-\usepackage{zhlipsum}
-\usepackage{lipsum}
-
-\usepackage[french,english]{babel}
-\hyphenation{rid-icu-lus}
 
 \ExplSyntaxOn
 \makeatletter
@@ -42,17 +37,13 @@
 \tl_put_right:Nn \endExample
   { \endtrivlist }
 \SideBySideExampleSet { numbers = none }
-\makeatother
 \ExplSyntaxOff
 
 \DeclareDocumentCommand \EXAMPLE { }
   {
-    \selectlanguage{french}
-    Frère Jacques, Frère Jacques, \par
-    Dor\-mez-vous? Dor\-mez-vous? \par
-    Sonnez les matines! Sonnez les matines! \par
-    Ding, dang, dong. Ding, dang, dong. \par
-    \selectlanguage{english}
+    What power art thou, who, from below,
+    Hast made me rise, unwillingly and slow, 
+    From beds of everlasting snow. 
   }
 
 \ctexset{
@@ -67,11 +58,14 @@
 
   \changes{v0.1}{2022/07/05}{Initial version.}
   \changes{v0.1}{2022/07/20}{First version submitted to CTAN.}
-  \changes{v0.2}{2022/07/21}{改进放置方式。}
+  \changes{v0.2}{2022/07/21}{Improvements of positioning mechanism.}
 
+  \GetFileInfo{wrapstuff.sty}  
+  
   \title{\bfseries The \pkg{wrapstuff} Package}
   \author{LI Qing\thanks{Translation by Jasper Habicht <mail@jasperhabicht.de>}}
-  \date{\filedate\qquad\fileversion\thanks{\gitsha{\ExplFileVersion}.}}
+% \date{\filedate\qquad\fileversion\thanks{\gitsha{\ExplFileVersion}.}}
+  \date{\filedate\qquad\fileversion\thanks{\gitsha{3be38c0}.}}
   \maketitle
 
   \begin{documentation}
@@ -88,16 +82,16 @@
   \begin{function}{wrapstuff}
     \begin{syntax}
       \tn{begin}\{wrapstuff\}\oarg{options}
-        <contents to be wrapped>
+        <contents>
       \tn{end}\{wrapstuff\}
-      <wrapped text>
+      <surrounding text>
     \end{syntax}
     The \pkg{wrapstuff} package only provides the \env{wrapstuff} environment, which will let the following paragraph wrap around its contents. For example:
     \begin{Example}[frame=single,numbers=none,gobble=5]
       \begin{wrapstuff}[c,top=1]
-        \includegraphics[width=\dimeval{\linewidth/4}]{example-image.pdf}
+        \includegraphics[width=12em]{example-image.pdf}
       \end{wrapstuff}
-      \lipsum[2]
+      \EXAMPLE \EXAMPLE \EXAMPLE \EXAMPLE \EXAMPLE \par
     \end{Example}
   \end{function}
 
@@ -106,7 +100,7 @@
      \tn{wrapstuffset} \Arg{option list}
    \end{syntax}
    Options to the \pkg{wrapstuff} package can be set when loading the package with the \tn{usepackage} macro as well as later using \tn{wrapstuffset}.
-   The followig options are available:
+   The following options are available:
  \end{function}
 
  \ADDSPECEIALKEY{\textrm{\meta{n}}}
@@ -115,30 +109,30 @@
      top = <non-negative integer>
    \end{syntax}
    This option sets the line number where the wrapping should start. The option can take any non-negative integer \meta{n}.
-   The initial value is \num{0}。
+   The initial value is \num{0}.
  \end{function}
 
  \begin{function}{width}
    \begin{syntax}
      width = <dimension>
    \end{syntax}
-   This option sets the width. The initial value is \qty{0}{pt}, denoting the natural width of the contents of the \env{wrapstuff} environment.
-   Using the initial value of \qty{0}{pt}, the contents of the \env{wrapstuff} environment can only take one line and may not contain |\\| for inserting linebreaks or \tn{par} to split paragraphs.
-   If you want to break lines or put several paragraphs into the \env{wrapstuff} environmentment, the option \opt{width} must be set to an appropiate dimension.
+   This option sets the width of the contents. The initial value is \qty{0}{pt}, denoting the natural width of the contents of the \env{wrapstuff} environment.
+   Using the initial value of \qty{0}{pt}, the contents of the \env{wrapstuff} environment can only take one logical line and may not contain |\\| for inserting line breaks or \tn{par} for separating paragraphs.
+   If you want to break lines or put several paragraphs into the \env{wrapstuff} environment, the option \opt{width} must be set to an appropriate dimension.
  \end{function}
 
  \begin{function}{height}
    \begin{syntax}
      height = <dimension>
    \end{syntax}
-   This option sets the height of the wrapped content. The initial value is \qty{0}{pt}, denoting the natural height of the contents of the \env{wrapstuff} environment.
+   This option sets the height of the contents. The initial value is \qty{0}{pt}, denoting the natural height of the contents of the \env{wrapstuff} environment.
  \end{function}
 
  \begin{function}{lines}
    \begin{syntax}
      lines = <integer>
    \end{syntax}
-   This option sets the number of lines the wrapped contents should cover. It takes any integer.
+   This option sets the number of lines of the surrounding text the contents should cover. It takes any integer.
    The initial value is empty, which means that the number of lines is calculated from the contents of the \env{wrapstuff} environment.
  \end{function}
 
@@ -158,30 +152,32 @@
    The options \opt{l/r/c/i/o} set the alignment of the contents of the \env{wrapstuff} environment such that it sits on the left side, the right side, in the center, on the inner side or on the outer side of the surrounding text respectively.
    The option \opt{ratio} sets the ratio of the width of the part of the surrounding text that wraps around the left side. It can be set to any sensible real number within the range $[0,1]$.
    The options \opt{i/o} can be used together with the option \opt{ratio}.
-   The initial value is |r|, which means that the contents of the \env{wrapstuff} environment sits on the right side and the surrounding text wraps around the left side.
+   The initial value is |r|, which means that the contents of the \env{wrapstuff} environment sit on the right side and the surrounding text wraps around the left side.
  \end{function}
 
  \begin{function}{column}
    \begin{syntax}
      column = <(true)|false|par>
    \end{syntax}
-   This option contols whether the contents of the \env{wrapstuff} environment should be wrapped by text that is split over two columns. Setting this option to |true| only works if the option \opt{c} is set or the option \opt{ratio} is set to a value other than $0$ or $1$.
+   This option controls whether the contents of the \env{wrapstuff} environment should be wrapped by text that is split over two columns. Setting this option to |true| only works if the option \opt{c} is set or the option \opt{ratio} is set to a value other than $0$ or $1$.
    \opt{false} means that the characters of the surrounding text are typeset from the left to the right for each line.
-   \opt{par} means sets the unit for typesetting columns to paragraphs. Compare the below example:
-   \begin{SideBySideExample}[xrightmargin=\dimeval{22em+5mm}]
+   \opt{par} sets the unit for typesetting columns to paragraphs. Compare the below example:
+   \begin{Example}[frame=single,numbers=none,gobble=5]
      \begin{wrapstuff}[c,1]
-       \IMAGE{2em}{a}
+       \IMAGE{6em}{a}
      \end{wrapstuff}
-     \EXAMPLE
+     \EXAMPLE \EXAMPLE \par \EXAMPLE \EXAMPLE \par
+     \medskip
      \begin{wrapstuff}[c,1,column=par]
-       \IMAGE{2em}{b}
+       \IMAGE{6em}{b}
      \end{wrapstuff}
-     \EXAMPLE
+     \EXAMPLE \EXAMPLE \par \EXAMPLE \EXAMPLE \par 
+     \medskip
      \begin{wrapstuff}[c,0,column=false]
-       \IMAGE{2em}{c}
+       \IMAGE{6em}{c}
      \end{wrapstuff}
-     \EXAMPLE
-   \end{SideBySideExample}
+     \EXAMPLE \EXAMPLE \par \EXAMPLE \EXAMPLE \par
+   \end{Example}
  \end{function}
 
  \begin{function}{leftsep,rightsep,hsep}
@@ -226,21 +222,20 @@
      type = <type of floating environment>
    \end{syntax}
    This option controls the type of the floating environment that should be used for the contents of the \env{wrapstuff} environment. The initial value is empty.
-   If the \tn{caption} macro should be used inside the \env{wrapstuff} environment,
-   the value of the \opt{type} option should be set to \opt{figure} or \opt{table} (or the type of the relevant floating environment that is used) and the \opt{width} option should be set to a specific length.
-   \begin{SideBySideExample}[xrightmargin=\dimeval{19em+5mm}]
-     \begin{wrapstuff}[type=figure,width=9em]
+   If the \tn{caption} macro is to be used inside the \env{wrapstuff} environment, the value of the \opt{type} option should be set to \opt{figure} or \opt{table} (or the type of the relevant floating environment that is used) and the \opt{width} option should be set to a specific length.
+   \begin{Example}[frame=single,numbers=none,gobble=5]
+     \begin{wrapstuff}[type=figure,width=15em]
        \centering
-       \IMAGE{4em}{plain}
+       \IMAGE{10em}{plain}
        \caption{Example}
      \end{wrapstuff}
-     \EXAMPLE
-   \end{SideBySideExample}
+     \EXAMPLE \EXAMPLE \par \EXAMPLE \EXAMPLE \par
+   \end{Example}
  \end{function}
 
  \begin{function}{\wrapstuffclear}
    If the line count of the current paragraph of the surrounding text is not sufficient to fully enclose the contents of the \env{wrapstuff} environment, the wrapping will continue in the following paragraph.
-   This may lead to some unwanted outcomes. If \tn{wrapstuffclear} is used before the following paragraph, this standard behavior that the wrapping continues is cancelled.
+   This may lead to some unwanted outcomes. If \tn{wrapstuffclear} is used before the following paragraph, this standard behavior of continuous wrapping is turned off.
  \end{function}
 
  \end{documentation}
