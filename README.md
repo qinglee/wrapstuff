@@ -14,7 +14,7 @@ The package only provides a user environment `wrapstuff`.
 \end{wrapstuff}
 <main text>
 ```
-You can read the package manual (in Chinese) for some explanations.
+You can read the package manual (in both English and Chinese) for some explanations.
 
 Contributing
 ------------
